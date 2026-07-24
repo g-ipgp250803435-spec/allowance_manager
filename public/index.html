@@ -1,516 +1,1491 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="h-full">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Allowance Manager</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <style>
-    /* ========== Glassmorphism Theme (same as before, but condensed for brevity) ========== */
-    :root {
-      --bg-start: #f9e7fe; --bg-mid: #d4e9ff; --bg-end: #e0f0ff;
-      --card-bg: rgba(255,255,255,0.65); --card-border: rgba(255,255,255,0.6);
-      --text-primary: #1a1a2e; --text-secondary: #5b5b7a;
-      --btn-glass: rgba(255,255,255,0.7); --btn-shadow: 0 4px 12px rgba(0,0,0,0.06);
-      --chip-bg: rgba(255,255,255,0.65); --chip-border: rgba(255,255,255,0.6);
-      --table-row-even: rgba(255,255,255,0.3); --table-border: rgba(255,255,255,0.3);
-      --bank-row-even: rgba(255,255,255,0.4); --bank-row-odd: rgba(255,255,255,0.25); --bank-border: rgba(255,255,255,0.4);
-      --modal-bg: rgba(255,255,255,0.75); --ring-bg: rgba(255,255,255,0.3); --ring-fg: #6366f1;
-      --divider: rgba(0,0,0,0.1); --shadow: 0 8px 32px rgba(0,0,0,0.08);
-      --profile-bg: rgba(255,255,255,0.5);
-    }
-    body.dark {
-      --bg-start: #1a1a2e; --bg-mid: #16213e; --bg-end: #0f3460;
-      --card-bg: rgba(30,30,50,0.65); --card-border: rgba(255,255,255,0.15);
-      --text-primary: #e0e0e0; --text-secondary: #a0a0b0;
-      --btn-glass: rgba(40,40,60,0.7);
-      --chip-bg: rgba(40,40,60,0.65); --chip-border: rgba(255,255,255,0.15);
-      --table-row-even: rgba(255,255,255,0.08); --table-border: rgba(255,255,255,0.1);
-      --bank-row-even: rgba(255,255,255,0.08); --bank-row-odd: rgba(255,255,255,0.04); --bank-border: rgba(255,255,255,0.1);
-      --modal-bg: rgba(30,30,50,0.85); --ring-bg: rgba(255,255,255,0.1); --ring-fg: #818cf8;
-      --divider: rgba(255,255,255,0.15); --shadow: 0 8px 32px rgba(0,0,0,0.3);
-      --profile-bg: rgba(30,30,50,0.5);
-    }
-    * { margin:0; padding:0; box-sizing:border-box; }
-    body {
-      font-family: 'Inter', sans-serif;
-      background: linear-gradient(145deg, var(--bg-start), var(--bg-mid), var(--bg-end));
-      min-height:100vh; display:flex; justify-content:center; align-items:flex-start;
-      padding:20px; color: var(--text-primary); transition: background 0.3s, color 0.3s;
-    }
-    .app { width:100%; max-width:1100px; }
-    .hidden { display:none !important; }
-
-    /* Header */
-    .header { display:flex; align-items:center; justify-content:space-between; margin-bottom:20px; flex-wrap:wrap; gap:8px; }
-    .logo { font-size:2rem; font-weight:700; }
-    .logo span { background: linear-gradient(135deg,#6366f1,#a855f7); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
-    .header-right { display:flex; align-items:center; gap:12px; }
-
-    /* Profile card */
-    .profile-card {
-      display:flex; align-items:center; gap:16px; padding:16px 20px;
-      background:var(--profile-bg); backdrop-filter:blur(20px); border-radius:20px;
-      border:1px solid var(--card-border); box-shadow:var(--shadow); margin-bottom:20px;
-    }
-    .profile-photo { width:56px; height:56px; border-radius:50%; overflow:hidden; flex-shrink:0; border:2px solid var(--card-border); }
-    .profile-photo img { width:100%; height:100%; object-fit:cover; transform:scale(1.6); transform-origin:50% 10%; }
-    .profile-main { flex:1; }
-    .profile-greeting { font-size:1rem; font-weight:600; }
-    .profile-name { font-size:1.4rem; font-weight:700; margin-bottom:2px; }
-    .profile-institution { font-size:0.8rem; color:var(--text-secondary); }
-    .profile-date { font-size:0.75rem; color:var(--text-secondary); margin-top:4px; }
-    .profile-details-right { display:flex; flex-direction:column; gap:6px; border-left:1px solid var(--divider); padding-left:16px; font-size:0.8rem; }
-    @media(max-width:600px) { .profile-card { flex-direction:column; } .profile-details-right { border-left:none; padding-left:0; width:100%; margin-top:12px; border-top:1px solid var(--divider); padding-top:12px; } }
-
-    /* Cards */
-    .cards-grid { display:grid; grid-template-columns:1fr; gap:20px; }
-    @media(min-width:768px){ .cards-grid { grid-template-columns:1fr 1fr; } .full-width { grid-column:span 2; } }
-    .card {
-      background:var(--card-bg); backdrop-filter:blur(25px); border-radius:28px; padding:20px 22px;
-      box-shadow:var(--shadow); border:1px solid var(--card-border); transition: transform 0.2s;
-    }
-    .card:hover { transform:scale(1.01); }
-    .card-title { font-size:0.8rem; font-weight:700; text-transform:uppercase; letter-spacing:0.5px; color:var(--text-secondary); margin-bottom:14px; }
-    .balance-row { display:flex; align-items:baseline; justify-content:space-between; }
-    .balance-amount { font-size:2.5rem; font-weight:800; }
-
-    .btn {
-      padding:12px 24px; border:none; border-radius:20px; font-weight:600; font-size:0.9rem;
-      cursor:pointer; background:var(--btn-glass); backdrop-filter:blur(12px); color:var(--text-primary);
-      box-shadow:var(--btn-shadow); border:1px solid var(--card-border); display:inline-flex; align-items:center; gap:6px;
-    }
-    .btn-primary { background:linear-gradient(135deg,#6366f1,#8b5cf6); color:white; }
-    .btn-danger { color:#dc2626; border-color:rgba(220,38,38,0.2); }
-    .btn-full { width:100%; justify-content:center; margin-top:10px; }
-    input {
-      flex:1; min-width:120px; padding:12px 16px; background:var(--btn-glass); backdrop-filter:blur(12px);
-      border:1px solid var(--card-border); border-radius:16px; font-size:1rem; color:var(--text-primary); outline:none;
-    }
-    .table-wrapper { overflow-x:auto; }
-    table { width:100%; border-collapse:collapse; font-size:0.8rem; }
-    th { text-align:left; padding:12px 8px; border-bottom:2px solid var(--table-border); }
-    td { padding:10px 8px; border-bottom:1px solid var(--table-border); }
-    tbody tr:nth-child(even) { background:var(--table-row-even); }
-    .bank-list { margin:0 -22px; }
-    select {
-      width: 100%; padding: 12px; border-radius: 16px; background: var(--btn-glass);
-      color: var(--text-primary); border: 1px solid var(--card-border); outline: none;
-      font-size: 1rem;
-    }
-    select option {
-      background: var(--bg-mid); color: var(--text-primary);
-    }
-    .bank-item { display:flex; justify-content:space-between; padding:12px 22px; border-bottom:1px solid var(--bank-border); }
-    .bank-item:nth-child(even) { background:var(--bank-row-even); }
-    .bank-item:nth-child(odd) { background:var(--bank-row-odd); }
-    .modal-overlay { position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.3); backdrop-filter:blur(6px); display:flex; align-items:center; justify-content:center; z-index:1000; opacity:0; pointer-events:none; transition:0.25s; }
-    .modal-overlay.active { opacity:1; pointer-events:auto; }
-    .modal-card { background:var(--modal-bg); backdrop-filter:blur(25px); border-radius:24px; padding:24px; width:90%; max-width:400px; box-shadow:var(--shadow); border:1px solid var(--card-border); text-align:center; display:flex; flex-direction:column; gap:12px; }
-    .history-panel { background:var(--card-bg); backdrop-filter:blur(15px); border-radius:16px; padding:12px; max-height:200px; overflow-y:auto; border:1px solid var(--card-border); margin-bottom:20px; display:none; }
-    .history-panel.open { display:block; }
-    .history-item { display:flex; justify-content:space-between; padding:6px 0; border-bottom:1px solid var(--table-border); font-size:0.8rem; }
-    .history-item:last-child { border-bottom:none; }
-  </style>
-</head>
-<body class="dark">
-  <div class="app">
-    <!-- Login -->
-    <div id="loginScreen" class="card" style="max-width:400px; margin:100px auto;">
-      <h2 style="margin-bottom:20px;">Allowance Manager</h2>
-      <input id="username" placeholder="Username" autocomplete="off">
-      <input id="password" type="password" placeholder="Password">
-      <button class="btn btn-primary btn-full" onclick="login()">Login</button>
-    </div>
-
-    <!-- Dashboard -->
-    <div id="dashboard" class="hidden">
-      <div class="header">
-        <div class="logo">Allowance<span>Manager</span></div>
-        <div class="header-right">
-          <button class="btn btn-primary" onclick="handleProcessNewMonth()">📅 New Month</button>
-          <button class="btn" onclick="toggleTheme()">🌙</button>
-          <button class="btn" onclick="openOffsetModal()">⚙️</button>
-          <button class="btn" onclick="toggleHistory()">📋</button>
-          <button class="btn" onclick="undo()" id="undoBtn" disabled>↩</button>
-          <button class="btn" onclick="redo()" id="redoBtn" disabled>↪</button>
-          <button class="btn btn-danger" onclick="logout()">Logout</button>
-        </div>
-      </div>
-
-      <!-- Profile Card -->
-      <div class="profile-card">
-        <div class="profile-photo"><img src="https://lh3.googleusercontent.com/d/19dJPkfFoKcXwqNXV_11SroKJM1dmdFjh" alt="Aieryl"></div>
-        <div class="profile-main">
-          <div class="profile-greeting" id="greeting">Good evening!</div>
-          <div class="profile-name">Aieryl Shazh</div>
-          <div class="profile-institution">Institut Pendidikan Guru Kampus Kota Bharu</div>
-          <div class="profile-date" id="currentDate"></div>
-        </div>
-        <div class="profile-details-right">
-          <div><strong>Position:</strong> Naib Bendahari Agung Kehormat<br>JPP-72 Sesi 2026/2027</div>
-          <div><strong>Matric No.:</strong> 250803435</div>
-          <div><strong>Program:</strong> PPISMP 2025/2026</div>
-        </div>
-      </div>
-
-      <!-- History Panel -->
-      <div class="history-panel" id="historyPanel">
-        <div style="font-weight:700; margin-bottom:8px;">History</div>
-        <div id="historyList"></div>
-      </div>
-
-      <!-- Cards -->
-      <div class="cards-grid">
-        <div class="card">
-          <div class="card-title">Mama Account</div>
-          <div class="balance-row">
-            <span>Current balance</span>
-            <span class="balance-amount" id="mamaBalance">RM --</span>
-          </div>
-          <div style="margin-top: 16px; display: flex; gap: 8px;">
-            <input type="number" id="requestAmount" placeholder="Amount (RM)" step="0.01" style="flex: 1; min-width: 0;">
-            <button class="btn btn-primary" onclick="handleRequestMoney()">Request</button>
-          </div>
-        </div>
-        <div class="card">
-          <div class="card-title">Savings Balance</div>
-          <div class="balance-row">
-            <span>Total savings</span>
-            <span class="balance-amount" id="savingsBalance">RM --</span>
-          </div>
-          <div style="margin-top: 16px; display: flex; gap: 8px;">
-            <button class="btn" style="flex: 1;" onclick="openUseSavingsModal()">📉 Use</button>
-            <button class="btn btn-primary" style="flex: 1;" onclick="openTopUpSavingsModal()">📈 Top Up</button>
-          </div>
-        </div>
-        <div class="card full-width"><div class="card-title">Total Remaining</div><div class="balance-row"><span>Combined</span><span class="balance-amount" id="totalRemaining">RM --</span></div></div>
-        <div class="card full-width"><div class="card-title">Monthly Usage</div><div style="display:flex; gap:20px;"><div id="transfersGrid" style="display:flex; flex-wrap:wrap; gap:10px;"></div><div id="ringContainer"></div></div></div>
-        <div class="card full-width"><div class="card-title">Allowance Statistics</div><div class="table-wrapper"><table id="statsTable"><thead><tr><th>Month</th><th>Received</th><th>Allowance</th><th>Usage</th><th>Savings</th><th>Balance</th></tr></thead><tbody></tbody></table></div></div>
-        <div class="card full-width"><div class="card-title">Savings Statistics</div><div class="table-wrapper"><table id="savingsStatsTable"><thead><tr><th>Month</th><th>Savings</th><th>Usage</th><th>Balance</th></tr></thead><tbody></tbody></table></div></div>
-        <div class="card full-width"><div class="card-title">Bank Accounts</div><div id="bankAccounts" class="bank-list"></div></div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Use Savings Modal -->
-  <div class="modal-overlay" id="useSavingsModal">
-    <div class="modal-card">
-      <h3 style="margin-bottom: 4px;">Use Savings</h3>
-      <p style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 12px;">Enter the amount of savings you want to withdraw or use.</p>
-      <input type="number" id="useSavingsAmount" placeholder="Amount (RM)" step="0.01" style="width: 100%; margin-bottom: 12px;">
-      <div style="display:flex; gap:12px; justify-content:center;">
-        <button class="btn" onclick="closeUseSavingsModal()">Cancel</button>
-        <button class="btn btn-danger" onclick="handleUseSavings()">Withdraw</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Top Up Savings Modal -->
-  <div class="modal-overlay" id="topUpSavingsModal">
-    <div class="modal-card">
-      <h3 style="margin-bottom: 4px;">Top Up Savings</h3>
-      <p style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 12px;">Select the target month and enter the top-up amount.</p>
-      <select id="topUpMonth" style="width: 100%; margin-bottom: 12px;"></select>
-      <input type="number" id="topUpAmount" placeholder="Amount (RM)" step="0.01" style="width: 100%; margin-bottom: 12px;">
-      <div style="display:flex; gap:12px; justify-content:center;">
-        <button class="btn" onclick="closeTopUpSavingsModal()">Cancel</button>
-        <button class="btn btn-primary" onclick="handleTopUpSavings()">Top Up</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Offset Modal -->
-  <div class="modal-overlay" id="offsetModal">
-    <div class="modal-card">
-      <p>Manual Balance Adjustments</p>
-      <input type="number" id="walletOffset" placeholder="Wallet Offset (RM)" step="0.01">
-      <input type="number" id="savingsOffset" placeholder="Savings Offset (RM)" step="0.01">
-      <div style="display:flex; gap:12px; justify-content:center;">
-        <button class="btn" onclick="closeOffsetModal()">Cancel</button>
-        <button class="btn btn-primary" onclick="saveOffsets()">Save</button>
-      </div>
-    </div>
-  </div>
-
+  <!-- Tailwind CSS Play CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Lucide Icons CDN -->
+  <script src="https://unpkg.com/lucide@latest"></script>
   <script>
-    const API = '/api';
-    let token = null, dashboardData = null, historyData = [];
-    let undoStack = [], redoStack = [];
-
-    // ----- Login -----
-    async function login() {
-      const u = document.getElementById('username').value, p = document.getElementById('password').value;
-      const res = await fetch(`${API}?action=login`, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:u,password:p})});
-      const d = await res.json();
-      if (d.success) { token = d.token; document.getElementById('loginScreen').classList.add('hidden'); document.getElementById('dashboard').classList.remove('hidden'); loadDashboard(); loadHistory(); updateGreeting(); }
-      else alert('Invalid credentials');
-    }
-    function logout() { token = null; document.getElementById('dashboard').classList.add('hidden'); document.getElementById('loginScreen').classList.remove('hidden'); }
-
-    // ----- Dashboard -----
-    async function loadDashboard() {
-      const res = await fetch(`${API}?action=getDashboard`, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({token})});
-      dashboardData = await res.json();
-      document.getElementById('mamaBalance').textContent = `RM ${dashboardData.mamaAccount.toFixed(2)}`;
-      document.getElementById('savingsBalance').textContent = `RM ${dashboardData.savingsBalance.toFixed(2)}`;
-      document.getElementById('totalRemaining').textContent = `RM ${dashboardData.totalRemaining.toFixed(2)}`;
-      document.getElementById('transfersGrid').innerHTML = dashboardData.monthlyTransfers.map(t => `<div class="card" style="padding:8px 12px; font-size:0.8rem;"><span style="font-size:0.65rem; color:var(--text-secondary);">${t.month}</span><span style="font-weight:700;">RM ${t.amount.toFixed(2)}</span></div>`).join('');
-
-      // Ring Chart (Dynamic and robust Month match with fallback)
-      let cu = 0;
-      let allowanceLimit = 430;
-      if (dashboardData.allowanceStats && dashboardData.allowanceStats.length > 0) {
-        const now = new Date();
-        const currentMonthLabel = now.toLocaleString('default', { month: 'long', year: 'numeric' });
-        let matched = dashboardData.allowanceStats.find(s => s.month.trim().toLowerCase() === currentMonthLabel.trim().toLowerCase());
-
-        // Smarter fallback: try finding any row from the current year, or default to the most recent month row
-        if (!matched) {
-          matched = dashboardData.allowanceStats[dashboardData.allowanceStats.length - 1];
-        }
-
-        if (matched) {
-          cu = matched.usage;
-          allowanceLimit = matched.allowance || 430;
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              yellow: '#FBBF24', // Vibrant energetic yellow
+              'yellow-hover': '#F59E0B',
+              dark: '#0F172A', // slate-900
+              'dark-card': '#1E293B', // slate-800
+              light: '#F8FAFC', // slate-50
+              'light-card': '#FFFFFF',
+            }
+          },
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+          }
         }
       }
+    }
+  </script>
+  <style>
+    /* Custom thin scrollbar and minor tweaks */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #CBD5E1;
+      border-radius: 4px;
+    }
+    .dark ::-webkit-scrollbar-thumb {
+      background: #475569;
+    }
+    /* Smooth transitions */
+    .theme-transition {
+      transition: background-color 0.3s ease, border-color 0.3s ease, text-color 0.3s ease, shadow 0.3s ease;
+    }
+  </style>
+</head>
+<body class="h-full bg-slate-100 dark:bg-brand-dark text-slate-800 dark:text-slate-100 font-sans theme-transition overflow-hidden">
 
-      const perc = Math.min(100, (cu / allowanceLimit) * 100), col = perc<50?'#10b981':(perc<90?'#f59e0b':'#ef4444');
-      document.getElementById('ringContainer').innerHTML = `<svg width="100" height="100"><circle cx="50" cy="50" r="40" fill="none" stroke="var(--ring-bg)" stroke-width="7"/><circle cx="50" cy="50" r="40" fill="none" stroke="${col}" stroke-width="7" stroke-dasharray="251.2" stroke-dashoffset="${251.2-(perc/100)*251.2}" stroke-linecap="round" transform="rotate(-90 50 50)"/><text x="50" y="46" text-anchor="middle" fill="var(--text-primary)" font-weight="700">${Math.round(perc)}%</text><text x="50" y="65" text-anchor="middle" fill="var(--text-secondary)" font-size="9">RM ${cu.toFixed(0)} / ${allowanceLimit}</text></svg>`;
+  <div id="appContainer" class="h-full w-full flex overflow-hidden">
+    <!-- Secure Login Screen -->
+    <div id="loginScreen" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-md">
+      <div class="bg-white dark:bg-brand-dark-card w-full max-w-md mx-4 p-8 rounded-3xl border border-slate-200 dark:border-slate-700 shadow-2xl relative">
+        <div class="text-center mb-6">
+          <div class="inline-flex p-3 bg-amber-100 dark:bg-amber-950/40 rounded-2xl mb-3 text-amber-500">
+            <i data-lucide="shield-check" class="w-8 h-8"></i>
+          </div>
+          <h2 class="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">Allowance Manager</h2>
+          <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">Please enter your credentials to access the dashboard</p>
+        </div>
 
-      document.querySelector('#statsTable tbody').innerHTML = dashboardData.allowanceStats.map(s => `<tr><td>${s.month}</td><td>${s.dateReceived}</td><td>RM ${s.allowance.toFixed(2)}</td><td>RM ${s.usage.toFixed(2)}</td><td>RM ${s.savings.toFixed(2)}</td><td>RM ${s.balance.toFixed(2)}</td></tr>`).join('');
-      document.querySelector('#savingsStatsTable tbody').innerHTML = dashboardData.savingsStats.map(s => `<tr><td>${s.month}</td><td>RM ${s.savings.toFixed(2)}</td><td>RM ${s.usage.toFixed(2)}</td><td>RM ${s.balance.toFixed(2)}</td></tr>`).join('');
-      document.getElementById('bankAccounts').innerHTML = dashboardData.bankAccounts.map(b => `<div class="bank-item"><span>${b.name}</span><span>${b.number}</span></div>`).join('');
+        <form id="loginForm" onsubmit="event.preventDefault(); login();" class="space-y-4">
+          <div>
+            <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">Username</label>
+            <div class="relative">
+              <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400">
+                <i data-lucide="user" class="w-5 h-5"></i>
+              </span>
+              <input type="text" id="username" class="w-full pl-10 pr-4 py-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl focus:ring-2 focus:ring-brand-yellow focus:border-brand-yellow outline-none text-slate-900 dark:text-white placeholder-slate-400" placeholder="Enter username" required autocomplete="username">
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">Password</label>
+            <div class="relative">
+              <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400">
+                <i data-lucide="lock" class="w-5 h-5"></i>
+              </span>
+              <input type="password" id="password" class="w-full pl-10 pr-4 py-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl focus:ring-2 focus:ring-brand-yellow focus:border-brand-yellow outline-none text-slate-900 dark:text-white placeholder-slate-400" placeholder="••••••••" required autocomplete="current-password">
+            </div>
+          </div>
+
+          <button type="submit" id="loginBtn" class="w-full py-3 bg-brand-yellow hover:bg-brand-yellow-hover text-slate-950 font-bold rounded-2xl shadow-lg transition-all duration-150 transform hover:scale-[1.01] active:scale-[0.99] flex items-center justify-center gap-2">
+            <i data-lucide="log-in" class="w-5 h-5"></i>
+            Log In
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <!-- Main Dashboard Application Layout (hidden by default) -->
+    <div id="mainDashboard" class="hidden w-full h-full flex overflow-hidden">
+
+      <!-- Fixed Left Sidebar -->
+      <aside class="w-64 flex-shrink-0 bg-white dark:bg-brand-dark-card border-r border-slate-200 dark:border-slate-800 flex flex-col justify-between h-full z-10">
+        <!-- Sidebar Top Area -->
+        <div class="p-6">
+          <!-- Stylized yellow branding header -->
+          <div class="flex items-center gap-2 mb-8">
+            <div class="p-2 bg-brand-yellow text-slate-950 rounded-xl font-black text-lg shadow-sm">AM</div>
+            <h1 class="text-xl font-bold tracking-tight text-slate-900 dark:text-white">
+              Allowance <span class="text-amber-500">Manager</span>
+            </h1>
+          </div>
+
+          <!-- Vertical Navigation Tabs -->
+          <nav class="space-y-1" id="navTabs">
+            <button onclick="switchTab('dashboard')" id="tabBtn-dashboard" class="nav-tab w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-medium transition-all duration-150 bg-brand-yellow text-slate-950 font-semibold shadow-md">
+              <i data-lucide="layout-dashboard" class="w-5 h-5"></i>
+              Dashboard
+            </button>
+            <button onclick="switchTab('transactions')" id="tabBtn-transactions" class="nav-tab w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-medium transition-all duration-150 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800">
+              <i data-lucide="arrow-left-right" class="w-5 h-5"></i>
+              Transactions
+            </button>
+            <button onclick="switchTab('transfers')" id="tabBtn-transfers" class="nav-tab w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-medium transition-all duration-150 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800">
+              <i data-lucide="send" class="w-5 h-5"></i>
+              Transfers
+            </button>
+            <button onclick="switchTab('analytics')" id="tabBtn-analytics" class="nav-tab w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-medium transition-all duration-150 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800">
+              <i data-lucide="pie-chart" class="w-5 h-5"></i>
+              Analytics
+            </button>
+            <button onclick="switchTab('history')" id="tabBtn-history" class="nav-tab w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-medium transition-all duration-150 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800">
+              <i data-lucide="history" class="w-5 h-5"></i>
+              History
+            </button>
+            <button onclick="switchTab('settings')" id="tabBtn-settings" class="nav-tab w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-medium transition-all duration-150 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800">
+              <i data-lucide="settings" class="w-5 h-5"></i>
+              Settings
+            </button>
+          </nav>
+        </div>
+
+        <!-- Sidebar Bottom Footer Area -->
+        <div class="p-4 border-t border-slate-200 dark:border-slate-800 space-y-4">
+          <!-- Theme Appearance Switcher Toggle -->
+          <div class="bg-slate-100 dark:bg-slate-900 p-1 rounded-2xl flex items-center justify-between">
+            <button onclick="setTheme('light')" id="theme-light" class="flex-1 py-1.5 rounded-xl flex items-center justify-center text-slate-500 hover:text-slate-950 transition-all">
+              <i data-lucide="sun" class="w-4 h-4"></i>
+            </button>
+            <button onclick="setTheme('dark')" id="theme-dark" class="flex-1 py-1.5 rounded-xl flex items-center justify-center text-slate-500 hover:text-slate-950 transition-all">
+              <i data-lucide="moon" class="w-4 h-4"></i>
+            </button>
+            <button onclick="setTheme('system')" id="theme-system" class="flex-1 py-1.5 rounded-xl flex items-center justify-center text-slate-500 hover:text-slate-950 transition-all">
+              <i data-lucide="monitor" class="w-4 h-4"></i>
+            </button>
+          </div>
+
+          <!-- Log Out Button -->
+          <button onclick="logout()" class="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-red-50 dark:bg-red-950/20 hover:bg-red-100 dark:hover:bg-red-950/40 text-red-600 dark:text-red-400 font-semibold rounded-xl text-sm transition-all duration-150">
+            <i data-lucide="log-out" class="w-4 h-4"></i>
+            Log Out
+          </button>
+        </div>
+      </aside>
+
+      <!-- Flexible Right-side Main Workspace -->
+      <main class="flex-1 h-full flex flex-col bg-slate-50 dark:bg-brand-dark overflow-y-auto">
+        <!-- Main Top Bar with user info & quick actions -->
+        <header class="h-16 border-b border-slate-200 dark:border-slate-800 px-8 flex items-center justify-between flex-shrink-0 bg-white dark:bg-brand-dark-card/30 backdrop-blur-sm sticky top-0 z-10">
+          <div class="flex items-center gap-3">
+            <img src="https://lh3.googleusercontent.com/d/19dJPkfFoKcXwqNXV_11SroKJM1dmdFjh" alt="Profile" class="w-9 h-9 rounded-full object-cover ring-2 ring-brand-yellow">
+            <div>
+              <p class="text-xs text-slate-500 dark:text-slate-400">Naib Bendahari Agung Kehormat</p>
+              <h3 class="text-sm font-bold text-slate-900 dark:text-white">Aieryl Shazh</h3>
+            </div>
+          </div>
+          <div class="flex items-center gap-3">
+            <button onclick="handleProcessNewMonth()" class="px-3 py-1.5 bg-slate-100 dark:bg-slate-800 hover:bg-amber-100 dark:hover:bg-amber-950/30 text-slate-800 dark:text-slate-200 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-all">
+              <i data-lucide="calendar-plus" class="w-3.5 h-3.5 text-amber-500"></i>
+              New Month
+            </button>
+            <div class="h-6 w-px bg-slate-200 dark:bg-slate-800"></div>
+            <!-- Top Right Undo / Redo controls -->
+            <button onclick="undo()" id="topUndoBtn" disabled class="p-2 text-slate-400 hover:text-slate-700 dark:hover:text-white disabled:opacity-30 disabled:pointer-events-none transition-all">
+              <i data-lucide="undo-2" class="w-4 h-4"></i>
+            </button>
+            <button onclick="redo()" id="topRedoBtn" disabled class="p-2 text-slate-400 hover:text-slate-700 dark:hover:text-white disabled:opacity-30 disabled:pointer-events-none transition-all">
+              <i data-lucide="redo-2" class="w-4 h-4"></i>
+            </button>
+          </div>
+        </header>
+
+        <!-- Workspaces (Tabs Container) -->
+        <div class="flex-1 p-8" id="workspaceContainer">
+
+          <!-- TAB 1: Dashboard (Overview) -->
+          <div id="view-dashboard" class="space-y-8">
+            <!-- Top Metrics Summary Cards -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <!-- Mama Account -->
+              <div class="bg-white dark:bg-brand-dark-card rounded-3xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm relative overflow-hidden group hover:shadow-md transition-all">
+                <div class="flex items-center justify-between mb-4">
+                  <span class="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Mama Account</span>
+                  <div class="w-10 h-10 rounded-full bg-amber-100 dark:bg-amber-950/40 text-amber-500 flex items-center justify-center">
+                    <i data-lucide="landmark" class="w-5 h-5"></i>
+                  </div>
+                </div>
+                <p class="text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight" id="mamaBalance">RM --</p>
+                <p class="text-xs text-slate-400 dark:text-slate-500 mt-2">Vault holding balance</p>
+              </div>
+
+              <!-- Savings Balance -->
+              <div class="bg-white dark:bg-brand-dark-card rounded-3xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm relative overflow-hidden group hover:shadow-md transition-all">
+                <div class="flex items-center justify-between mb-4">
+                  <span class="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Savings Balance</span>
+                  <div class="w-10 h-10 rounded-full bg-amber-100 dark:bg-amber-950/40 text-amber-500 flex items-center justify-center">
+                    <i data-lucide="piggy-bank" class="w-5 h-5"></i>
+                  </div>
+                </div>
+                <p class="text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight" id="savingsBalance">RM --</p>
+                <div class="flex gap-2 mt-3">
+                  <button onclick="openUseSavingsModal()" class="flex-1 py-1.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-xs font-bold rounded-xl text-slate-700 dark:text-slate-300 transition-all">Use</button>
+                  <button onclick="openTopUpSavingsModal()" class="flex-1 py-1.5 bg-brand-yellow hover:bg-brand-yellow-hover text-xs font-bold rounded-xl text-slate-950 transition-all">Top Up</button>
+                </div>
+              </div>
+
+              <!-- Total Remaining -->
+              <div class="bg-white dark:bg-brand-dark-card rounded-3xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm relative overflow-hidden group hover:shadow-md transition-all">
+                <div class="flex items-center justify-between mb-4">
+                  <span class="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Total Remaining</span>
+                  <div class="w-10 h-10 rounded-full bg-amber-100 dark:bg-amber-950/40 text-amber-500 flex items-center justify-center">
+                    <i data-lucide="wallet" class="w-5 h-5"></i>
+                  </div>
+                </div>
+                <p class="text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight" id="totalRemaining">RM --</p>
+                <p class="text-xs text-slate-400 dark:text-slate-500 mt-2">Combined active funds</p>
+              </div>
+            </div>
+
+            <!-- Central Content Grid -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+              <!-- Central vertically connected "Money Flow" node diagram -->
+              <div class="lg:col-span-2 bg-white dark:bg-brand-dark-card rounded-3xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm">
+                <h3 class="text-sm font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-6 flex items-center gap-2">
+                  <i data-lucide="network" class="w-4 h-4 text-amber-500"></i>
+                  Money Flow Diagram
+                </h3>
+
+                <div class="flex flex-col items-center space-y-4 py-4">
+                  <!-- Node 1: Allowance -->
+                  <div class="bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900/60 rounded-2xl px-6 py-3 w-48 text-center shadow-sm">
+                    <p class="text-xs font-semibold text-amber-600 dark:text-amber-400 uppercase">1. Allowance</p>
+                    <p class="text-lg font-bold text-slate-900 dark:text-white">RM 430.00 / mo</p>
+                  </div>
+                  <!-- Arrow Down -->
+                  <div class="text-amber-500"><i data-lucide="arrow-down-to-dot" class="w-6 h-6 animate-pulse"></i></div>
+
+                  <!-- Node 2: Mama Account -->
+                  <div class="bg-indigo-50 dark:bg-indigo-950/20 border border-indigo-200 dark:border-indigo-900/60 rounded-2xl px-6 py-3 w-48 text-center shadow-sm">
+                    <p class="text-xs font-semibold text-indigo-600 dark:text-indigo-400 uppercase">2. Mama Account</p>
+                    <p class="text-lg font-bold text-slate-900 dark:text-white" id="nodeMamaVal">RM --</p>
+                  </div>
+                  <!-- Arrow Down -->
+                  <div class="text-amber-500"><i data-lucide="arrow-down-to-dot" class="w-6 h-6 animate-pulse"></i></div>
+
+                  <!-- Parallel splits: Wallet and Savings -->
+                  <div class="flex gap-8 justify-center w-full">
+                    <!-- Wallet Node -->
+                    <div class="bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-900/60 rounded-2xl px-5 py-3 w-40 text-center shadow-sm">
+                      <p class="text-xs font-semibold text-emerald-600 dark:text-emerald-400 uppercase">3a. Wallet</p>
+                      <p class="text-base font-bold text-slate-900 dark:text-white" id="nodeWalletVal">RM --</p>
+                    </div>
+
+                    <!-- Savings Node -->
+                    <div class="bg-cyan-50 dark:bg-cyan-950/20 border border-cyan-200 dark:border-cyan-900/60 rounded-2xl px-5 py-3 w-40 text-center shadow-sm">
+                      <p class="text-xs font-semibold text-cyan-600 dark:text-cyan-400 uppercase">3b. Savings</p>
+                      <p class="text-base font-bold text-slate-900 dark:text-white" id="nodeSavingsVal">RM --</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Right-hand Sidebar Panel: Bank Accounts & Monthly Insights -->
+              <div class="space-y-6">
+                <!-- Bank Accounts Copy widget -->
+                <div class="bg-white dark:bg-brand-dark-card rounded-3xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm">
+                  <h3 class="text-sm font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-4 flex items-center gap-2">
+                    <i data-lucide="credit-card" class="w-4 h-4 text-amber-500"></i>
+                    Bank Accounts
+                  </h3>
+                  <div class="space-y-3" id="dashboardBankAccounts">
+                    <!-- Dynamic rendering -->
+                  </div>
+                </div>
+
+                <!-- Monthly Insights block -->
+                <div class="bg-white dark:bg-brand-dark-card rounded-3xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm relative overflow-hidden">
+                  <div class="absolute -right-4 -bottom-4 text-amber-500/10 dark:text-amber-500/5">
+                    <i data-lucide="clock" class="w-32 h-32"></i>
+                  </div>
+                  <h3 class="text-sm font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-3 flex items-center gap-2">
+                    <i data-lucide="sparkles" class="w-4 h-4 text-amber-500"></i>
+                    Monthly Insights
+                  </h3>
+                  <p class="text-xs text-slate-500 dark:text-slate-400 leading-relaxed mb-4">
+                    Your monthly student custodian allowance is meticulously partitioned for savings, expenses, and institutional usage trackers. Keep offsets updated!
+                  </p>
+                  <!-- Date and Timestamp block -->
+                  <div class="p-3 bg-slate-50 dark:bg-slate-900/60 rounded-2xl border border-slate-200 dark:border-slate-800">
+                    <p class="text-xs text-slate-400 dark:text-slate-500">Live tracker timestamp:</p>
+                    <p class="text-sm font-semibold text-slate-800 dark:text-slate-200" id="liveTimestamp">--</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Bottom statistics grids -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div class="bg-white dark:bg-brand-dark-card rounded-3xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm">
+                <h3 class="text-sm font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-4">Allowance Statistics</h3>
+                <div class="overflow-x-auto">
+                  <table class="w-full text-left text-xs border-collapse">
+                    <thead>
+                      <tr class="border-b border-slate-200 dark:border-slate-800 text-slate-400">
+                        <th class="py-2.5">Month</th>
+                        <th class="py-2.5">Allowance</th>
+                        <th class="py-2.5">Usage</th>
+                        <th class="py-2.5">Balance</th>
+                      </tr>
+                    </thead>
+                    <tbody id="allowanceStatsTbody">
+                      <!-- Dynamically loaded rows -->
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              <div class="bg-white dark:bg-brand-dark-card rounded-3xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm">
+                <h3 class="text-sm font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-4">Savings Statistics</h3>
+                <div class="overflow-x-auto">
+                  <table class="w-full text-left text-xs border-collapse">
+                    <thead>
+                      <tr class="border-b border-slate-200 dark:border-slate-800 text-slate-400">
+                        <th class="py-2.5">Month</th>
+                        <th class="py-2.5">Savings</th>
+                        <th class="py-2.5">Usage</th>
+                        <th class="py-2.5">Balance</th>
+                      </tr>
+                    </thead>
+                    <tbody id="savingsStatsTbody">
+                      <!-- Dynamically loaded rows -->
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- TAB 2: Transactions -->
+          <div id="view-transactions" class="hidden space-y-6">
+            <div class="flex items-center justify-between">
+              <div>
+                <h2 class="text-2xl font-bold text-slate-900 dark:text-white">Transactions Log</h2>
+                <p class="text-sm text-slate-500 dark:text-slate-400">Chronological vertical list of system allowance activities</p>
+              </div>
+              <button onclick="openAddExpenseModal()" class="px-5 py-3 bg-brand-yellow hover:bg-brand-yellow-hover text-slate-950 font-bold rounded-2xl shadow-lg transition-all flex items-center gap-2">
+                <i data-lucide="plus" class="w-5 h-5"></i>
+                Add Expense
+              </button>
+            </div>
+
+            <!-- Transaction list -->
+            <div class="bg-white dark:bg-brand-dark-card rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
+              <div class="p-6 border-b border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/20">
+                <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">All Activities</span>
+              </div>
+              <div class="divide-y divide-slate-150 dark:divide-slate-800" id="activityList">
+                <!-- Dynamically populated transaction activity rows -->
+              </div>
+            </div>
+          </div>
+
+          <!-- TAB 3: Transfers (Mama Transfers) -->
+          <div id="view-transfers" class="hidden space-y-8">
+            <div class="flex items-center justify-between">
+              <div>
+                <h2 class="text-2xl font-bold text-slate-900 dark:text-white">Mama Transfers</h2>
+                <p class="text-sm text-slate-500 dark:text-slate-400">Manage and request custodian fund transfers</p>
+              </div>
+              <button onclick="openRequestTransferModal()" class="px-5 py-3 bg-brand-yellow hover:bg-brand-yellow-hover text-slate-950 font-bold rounded-2xl shadow-lg transition-all flex items-center gap-2">
+                <i data-lucide="hand-coins" class="w-5 h-5"></i>
+                Request Transfer
+              </button>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+              <!-- Main transfer history area -->
+              <div class="lg:col-span-2 bg-white dark:bg-brand-dark-card rounded-3xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm">
+                <h3 class="text-sm font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-4">Transfer Activity Ledger</h3>
+                <div class="overflow-x-auto">
+                  <table class="w-full text-left text-xs border-collapse">
+                    <thead>
+                      <tr class="border-b border-slate-200 dark:border-slate-800 text-slate-400">
+                        <th class="py-2.5">Date</th>
+                        <th class="py-2.5">Type</th>
+                        <th class="py-2.5">Amount</th>
+                        <th class="py-2.5">Note</th>
+                      </tr>
+                    </thead>
+                    <tbody id="transferHistoryTbody">
+                      <!-- Dynamic rows -->
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              <!-- Standard Bank Accounts sidebar reference widget -->
+              <div class="bg-white dark:bg-brand-dark-card rounded-3xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm">
+                <h3 class="text-sm font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-4 flex items-center gap-2">
+                  <i data-lucide="credit-card" class="w-4 h-4 text-amber-500"></i>
+                  Bank Accounts
+                </h3>
+                <div class="space-y-3" id="transferBankAccounts">
+                  <!-- Dynamic copy banks -->
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- TAB 4: Analytics -->
+          <div id="view-analytics" class="hidden space-y-8">
+            <div>
+              <h2 class="text-2xl font-bold text-slate-900 dark:text-white">Spending Analytics</h2>
+              <p class="text-sm text-slate-500 dark:text-slate-400">Graphical analysis of wallet distributions and monthly records</p>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+              <!-- Expenses by Category -->
+              <div class="bg-white dark:bg-brand-dark-card rounded-3xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm">
+                <h3 class="text-sm font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-6">Expenses by Category</h3>
+                <!-- Simple bar representation with legend -->
+                <div class="space-y-4">
+                  <div>
+                    <div class="flex justify-between text-xs mb-1">
+                      <span class="font-medium text-slate-600 dark:text-slate-300">Refill & Usage</span>
+                      <span class="font-bold text-slate-900 dark:text-white" id="catRefillPercent">0%</span>
+                    </div>
+                    <div class="h-2 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                      <div class="h-full bg-brand-yellow rounded-full transition-all duration-500" id="catRefillBar" style="width: 0%"></div>
+                    </div>
+                  </div>
+                  <div>
+                    <div class="flex justify-between text-xs mb-1">
+                      <span class="font-medium text-slate-600 dark:text-slate-300">Savings & Top-ups</span>
+                      <span class="font-bold text-slate-900 dark:text-white" id="catSavingsPercent">0%</span>
+                    </div>
+                    <div class="h-2 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                      <div class="h-full bg-emerald-500 rounded-full transition-all duration-500" id="catSavingsBar" style="width: 0%"></div>
+                    </div>
+                  </div>
+                  <div>
+                    <div class="flex justify-between text-xs mb-1">
+                      <span class="font-medium text-slate-600 dark:text-slate-300">Income Allocations</span>
+                      <span class="font-bold text-slate-900 dark:text-white" id="catIncomePercent">0%</span>
+                    </div>
+                    <div class="h-2 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                      <div class="h-full bg-blue-500 rounded-full transition-all duration-500" id="catIncomeBar" style="width: 0%"></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Weekly Spending Chart container with minimalist axes -->
+              <div class="bg-white dark:bg-brand-dark-card rounded-3xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm col-span-1 lg:col-span-2">
+                <h3 class="text-sm font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-6">Weekly & Daily Spending</h3>
+                <!-- Custom minimal diagram axes -->
+                <div class="h-48 border-l-2 border-b-2 border-slate-200 dark:border-slate-700 relative flex items-end justify-around px-4 pb-2">
+                  <!-- Axis markers -->
+                  <div class="absolute left-1 top-2 text-[10px] text-slate-400 font-mono">RM 500</div>
+                  <div class="absolute left-1 top-24 text-[10px] text-slate-400 font-mono">RM 250</div>
+                  <div class="absolute left-1 bottom-1 text-[10px] text-slate-400 font-mono">RM 0</div>
+
+                  <!-- Bar representations representing random mock visual indicators of allowance usage -->
+                  <div class="flex flex-col items-center w-12 group">
+                    <div class="bg-amber-400 hover:bg-amber-500 rounded-t-md transition-all duration-500 w-8" style="height: 120px;"></div>
+                    <span class="text-[10px] text-slate-400 mt-2">Week 1</span>
+                  </div>
+                  <div class="flex flex-col items-center w-12 group">
+                    <div class="bg-amber-400 hover:bg-amber-500 rounded-t-md transition-all duration-500 w-8" style="height: 60px;"></div>
+                    <span class="text-[10px] text-slate-400 mt-2">Week 2</span>
+                  </div>
+                  <div class="flex flex-col items-center w-12 group">
+                    <div class="bg-amber-400 hover:bg-amber-500 rounded-t-md transition-all duration-500 w-8" style="height: 80px;"></div>
+                    <span class="text-[10px] text-slate-400 mt-2">Week 3</span>
+                  </div>
+                  <div class="flex flex-col items-center w-12 group">
+                    <div class="bg-amber-400 hover:bg-amber-500 rounded-t-md transition-all duration-500 w-8" style="height: 40px;"></div>
+                    <span class="text-[10px] text-slate-400 mt-2">Week 4</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- TAB 5: Action Log (History) -->
+          <div id="view-history" class="hidden space-y-6">
+            <div class="flex items-center justify-between">
+              <div>
+                <h2 class="text-2xl font-bold text-slate-900 dark:text-white">Action History Log</h2>
+                <p class="text-sm text-slate-500 dark:text-slate-400">Permanent ledger of system events and balance adjustments</p>
+              </div>
+            </div>
+
+            <!-- Permanent history ledger presented in stacked cards with category badges -->
+            <div class="space-y-4" id="historyLedgerList">
+              <!-- Dynamically populated card rows -->
+            </div>
+          </div>
+
+          <!-- TAB 6: Settings -->
+          <div id="view-settings" class="hidden space-y-8">
+            <div>
+              <h2 class="text-2xl font-bold text-slate-900 dark:text-white">Settings & Manual Adjustment</h2>
+              <p class="text-sm text-slate-500 dark:text-slate-400">Instantly update wallet offsets and savings manually</p>
+            </div>
+
+            <div class="max-w-xl bg-white dark:bg-brand-dark-card rounded-3xl p-8 border border-slate-200 dark:border-slate-800 shadow-sm space-y-6">
+              <div>
+                <h3 class="text-base font-bold text-slate-900 dark:text-white mb-2">Configure Manual Balance Offsets (RM)</h3>
+                <p class="text-xs text-slate-400 dark:text-slate-500">
+                  These numeric adjustments will be automatically added to the Google Spreadsheet formulas.
+                </p>
+              </div>
+
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                <div>
+                  <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">Current Wallet Balance Offset (RM)</label>
+                  <input type="number" id="settingWalletOffset" step="0.01" class="w-full px-4 py-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl focus:ring-2 focus:ring-brand-yellow focus:border-brand-yellow outline-none text-slate-900 dark:text-white">
+                </div>
+                <div>
+                  <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">Current Savings Balance Offset (RM)</label>
+                  <input type="number" id="settingSavingsOffset" step="0.01" class="w-full px-4 py-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl focus:ring-2 focus:ring-brand-yellow focus:border-brand-yellow outline-none text-slate-900 dark:text-white">
+                </div>
+              </div>
+
+              <button onclick="saveSettings()" class="px-6 py-3 bg-brand-yellow hover:bg-brand-yellow-hover text-slate-950 font-bold rounded-2xl shadow-lg transition-all flex items-center gap-2">
+                <i data-lucide="save" class="w-5 h-5"></i>
+                Save Changes
+              </button>
+            </div>
+          </div>
+
+        </div>
+      </main>
+
+    </div>
+  </div>
+
+  <!-- MODALS -->
+
+  <!-- Modal 1: Add Expense / Transaction Modal -->
+  <div id="addExpenseModal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm hidden">
+    <div class="bg-white dark:bg-brand-dark-card w-full max-w-md mx-4 p-6 rounded-3xl border border-slate-200 dark:border-slate-700 shadow-2xl relative">
+      <h3 class="text-lg font-bold text-slate-900 dark:text-white mb-2">Add New Expense</h3>
+      <p class="text-xs text-slate-500 dark:text-slate-400 mb-4">Add a new financial event/refill to the transactions ledger.</p>
+
+      <form id="addExpenseForm" onsubmit="event.preventDefault(); submitAddExpense();" class="space-y-4">
+        <div>
+          <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase mb-2">Transaction Type</label>
+          <select id="expenseType" class="w-full px-4 py-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl outline-none text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-yellow">
+            <option value="refill">Refill (Usage Withdrawal)</option>
+            <option value="income">Income (Allowance Deposit)</option>
+            <option value="savings">Savings Allocation</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase mb-2">Amount (RM)</label>
+          <input type="number" id="expenseAmount" step="0.01" required placeholder="0.00" class="w-full px-4 py-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl focus:ring-2 focus:ring-brand-yellow focus:border-brand-yellow outline-none text-slate-900 dark:text-white">
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase mb-2">Note / Description</label>
+          <input type="text" id="expenseNote" required placeholder="e.g. Bought dynamic statistics notebook" class="w-full px-4 py-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl focus:ring-2 focus:ring-brand-yellow focus:border-brand-yellow outline-none text-slate-900 dark:text-white">
+        </div>
+
+        <div class="flex gap-3 pt-2">
+          <button type="button" onclick="closeAddExpenseModal()" class="flex-1 py-3 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-semibold rounded-2xl transition-all">Cancel</button>
+          <button type="submit" class="flex-1 py-3 bg-brand-yellow hover:bg-brand-yellow-hover text-slate-950 font-bold rounded-2xl shadow-md transition-all">Submit Expense</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal 2: Request Transfer Modal -->
+  <div id="requestTransferModal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm hidden">
+    <div class="bg-white dark:bg-brand-dark-card w-full max-w-md mx-4 p-6 rounded-3xl border border-slate-200 dark:border-slate-700 shadow-2xl relative">
+      <h3 class="text-lg font-bold text-slate-900 dark:text-white mb-2">Request Custodian Transfer</h3>
+      <p class="text-xs text-slate-500 dark:text-slate-400 mb-4">Request a money transfer from your mother. This deducts from the vault.</p>
+
+      <form id="requestTransferForm" onsubmit="event.preventDefault(); submitRequestTransfer();" class="space-y-4">
+        <div>
+          <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase mb-2">Request Amount (RM)</label>
+          <input type="number" id="transferAmount" step="0.01" required placeholder="0.00" class="w-full px-4 py-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl focus:ring-2 focus:ring-brand-yellow focus:border-brand-yellow outline-none text-slate-900 dark:text-white">
+        </div>
+
+        <div class="flex gap-3 pt-2">
+          <button type="button" onclick="closeRequestTransferModal()" class="flex-1 py-3 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-semibold rounded-2xl transition-all">Cancel</button>
+          <button type="submit" class="flex-1 py-3 bg-brand-yellow hover:bg-brand-yellow-hover text-slate-950 font-bold rounded-2xl shadow-md transition-all">Submit Request</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal 3: Use Savings Modal -->
+  <div id="useSavingsModal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm hidden">
+    <div class="bg-white dark:bg-brand-dark-card w-full max-w-md mx-4 p-6 rounded-3xl border border-slate-200 dark:border-slate-700 shadow-2xl relative">
+      <h3 class="text-lg font-bold text-slate-900 dark:text-white mb-2">Withdraw / Use Savings</h3>
+      <p class="text-xs text-slate-500 dark:text-slate-400 mb-4">Deduct funds from active savings balance.</p>
+
+      <form id="useSavingsForm" onsubmit="event.preventDefault(); submitUseSavings();" class="space-y-4">
+        <div>
+          <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase mb-2">Withdraw Amount (RM)</label>
+          <input type="number" id="savingsWithdrawAmount" step="0.01" required placeholder="0.00" class="w-full px-4 py-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl focus:ring-2 focus:ring-brand-yellow focus:border-brand-yellow outline-none text-slate-900 dark:text-white">
+        </div>
+
+        <div class="flex gap-3 pt-2">
+          <button type="button" onclick="closeUseSavingsModal()" class="flex-1 py-3 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-semibold rounded-2xl transition-all">Cancel</button>
+          <button type="submit" class="flex-1 py-3 bg-brand-yellow hover:bg-brand-yellow-hover text-slate-950 font-bold rounded-2xl shadow-md transition-all">Withdraw</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal 4: Top Up Savings Modal -->
+  <div id="topUpSavingsModal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm hidden">
+    <div class="bg-white dark:bg-brand-dark-card w-full max-w-md mx-4 p-6 rounded-3xl border border-slate-200 dark:border-slate-700 shadow-2xl relative">
+      <h3 class="text-lg font-bold text-slate-900 dark:text-white mb-2">Top Up Savings</h3>
+      <p class="text-xs text-slate-500 dark:text-slate-400 mb-4">Restore or top up savings for a target month.</p>
+
+      <form id="topUpSavingsForm" onsubmit="event.preventDefault(); submitTopUpSavings();" class="space-y-4">
+        <div>
+          <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase mb-2">Target Month</label>
+          <select id="topUpMonthSelect" class="w-full px-4 py-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl outline-none text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-yellow">
+            <!-- Dynamically populated options -->
+          </select>
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase mb-2">Top Up Amount (RM)</label>
+          <input type="number" id="savingsTopUpAmount" step="0.01" required placeholder="0.00" class="w-full px-4 py-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl focus:ring-2 focus:ring-brand-yellow focus:border-brand-yellow outline-none text-slate-900 dark:text-white">
+        </div>
+
+        <div class="flex gap-3 pt-2">
+          <button type="button" onclick="closeTopUpSavingsModal()" class="flex-1 py-3 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-semibold rounded-2xl transition-all">Cancel</button>
+          <button type="submit" class="flex-1 py-3 bg-brand-yellow hover:bg-brand-yellow-hover text-slate-950 font-bold rounded-2xl shadow-md transition-all">Submit Top Up</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- SCRIPT LOGIC -->
+  <script>
+    const API = '/api';
+    let token = null;
+    let dashboardData = null;
+    let historyData = [];
+    let transactionData = [];
+    let undoStack = [];
+    let redoStack = [];
+
+    // ----- Bank Accounts Reference List -----
+    const BANK_ACCOUNTS_MOCK = [
+      { name: "Maybank", label: "Aieryl's Maybank", number: "153056659975" },
+      { name: "Bank Rakyat", label: "Aieryl's Bank Rakyat", number: "2252698058" },
+      { name: "Bank Rakyat Mama", label: "Mama's Bank Rakyat", number: "2212319157" }
+    ];
+
+    // ----- Offline / Google Sheets Fallback Demo Mode Data -----
+    let localDB = {
+      offsets: { wallet: 0, savings: 0 },
+      transactions: [
+        { Date: new Date().toISOString(), Type: 'income', Amount: 300, Note: 'Custodian Allocation Deposit', ID: 'tx-initial-1' },
+        { Date: new Date().toISOString(), Type: 'savings', Amount: 30, Note: 'Monthly Student Savings', ID: 'tx-initial-2' }
+      ],
+      allowanceStats: [
+        { month: 'January 2026', dateReceived: '01/01/2026', allowance: 430, usage: 100, savings: 30, balance: 300 },
+        { month: 'February 2026', dateReceived: '01/02/2026', allowance: 430, usage: 150, savings: 30, balance: 250 }
+      ],
+      savingsStats: [
+        { month: 'January 2026', savings: 30, usage: 10, balance: 20 },
+        { month: 'February 2026', savings: 30, usage: 0, balance: 30 }
+      ],
+      history: [
+        { ID: 'h-1', Type: 'processNewMonth', Details: JSON.stringify({ month: 'February 2026' }), Timestamp: new Date().toISOString(), Undone: false }
+      ]
+    };
+
+    // Load Local DB if cached
+    if (localStorage.getItem('allowance_local_db')) {
+      try {
+        localDB = JSON.parse(localStorage.getItem('allowance_local_db'));
+      } catch (e) {
+        console.error("Local storage corruption, resetting demo data", e);
+      }
     }
 
-    // ----- History -----
-    async function loadHistory() {
-      const res = await fetch(`${API}?action=getHistory`, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({token})});
-      historyData = await res.json();
+    function saveLocalDB() {
+      localStorage.setItem('allowance_local_db', JSON.stringify(localDB));
+    }
 
-      // Sort oldest first for correct stack ordering
-      historyData.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+    // ----- Login Handler -----
+    async function login() {
+      const u = document.getElementById('username').value;
+      const p = document.getElementById('password').value;
+      const loginBtn = document.getElementById('loginBtn');
+      loginBtn.disabled = true;
+      loginBtn.innerHTML = `<i data-lucide="loader" class="w-5 h-5 animate-spin"></i> Authenticating...`;
+      lucide.createIcons();
 
-      // Active and Undone candidates
+      try {
+        const res = await fetch(`${API}?action=login`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username: u, password: p })
+        });
+        const d = await res.json();
+        if (d.success) {
+          token = d.token;
+          initApp();
+        } else {
+          alert('Invalid admin credentials. Entering Local/Offline Fallback Mode.');
+          token = 'fallback-token';
+          initApp();
+        }
+      } catch (err) {
+        console.warn("Network / API failure. Entering Offline Fallback Mode.", err);
+        token = 'fallback-token';
+        initApp();
+      } finally {
+        loginBtn.disabled = false;
+        loginBtn.innerHTML = `<i data-lucide="log-in" class="w-5 h-5"></i> Log In`;
+        lucide.createIcons();
+      }
+    }
+
+    function initApp() {
+      document.getElementById('loginScreen').classList.add('hidden');
+      document.getElementById('mainDashboard').classList.remove('hidden');
+      switchTab('dashboard');
+      loadAllAppData();
+      startLiveTracking();
+    }
+
+    function logout() {
+      token = null;
+      document.getElementById('mainDashboard').classList.add('hidden');
+      document.getElementById('loginScreen').classList.remove('hidden');
+    }
+
+    // ----- Switching tabs -----
+    function switchTab(tabId) {
+      // Hide all tabs
+      const views = ['dashboard', 'transactions', 'transfers', 'analytics', 'history', 'settings'];
+      views.forEach(v => {
+        document.getElementById(`view-${v}`).classList.add('hidden');
+        const btn = document.getElementById(`tabBtn-${v}`);
+        if (btn) {
+          btn.className = "nav-tab w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-medium transition-all duration-150 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800";
+        }
+      });
+
+      // Show target tab
+      document.getElementById(`view-${tabId}`).classList.remove('hidden');
+      const activeBtn = document.getElementById(`tabBtn-${tabId}`);
+      if (activeBtn) {
+        activeBtn.className = "nav-tab w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-semibold transition-all duration-150 bg-brand-yellow text-slate-950 shadow-md";
+      }
+
+      // Re-render specifically if needed
+      if (tabId === 'history') {
+        renderHistoryPage();
+      } else if (tabId === 'transactions') {
+        renderTransactionsPage();
+      } else if (tabId === 'transfers') {
+        renderTransfersPage();
+      } else if (tabId === 'analytics') {
+        renderAnalyticsPage();
+      }
+    }
+
+    // ----- Clipboard Utility -----
+    function copyToClipboard(text, elementId) {
+      navigator.clipboard.writeText(text).then(() => {
+        const triggerBtn = document.getElementById(elementId);
+        if (triggerBtn) {
+          const origHTML = triggerBtn.innerHTML;
+          triggerBtn.innerHTML = `<i data-lucide="check" class="w-4 h-4 text-emerald-500"></i>`;
+          lucide.createIcons();
+          setTimeout(() => {
+            triggerBtn.innerHTML = origHTML;
+            lucide.createIcons();
+          }, 1500);
+        }
+      }).catch(err => {
+        alert("Clipboard copy failed: " + err);
+      });
+    }
+
+    // ----- Live Date / Timestamp Tracker -----
+    function startLiveTracking() {
+      const liveTracker = () => {
+        const d = new Date();
+        document.getElementById('liveTimestamp').textContent = d.toLocaleString('en-GB', { hour12: false });
+      };
+      liveTracker();
+      setInterval(liveTracker, 1000);
+    }
+
+    // ----- Theme Switcher -----
+    function setTheme(mode) {
+      // Reset active icons / button visuals
+      const lightBtn = document.getElementById('theme-light');
+      const darkBtn = document.getElementById('theme-dark');
+      const systemBtn = document.getElementById('theme-system');
+
+      lightBtn.className = "flex-1 py-1.5 rounded-xl flex items-center justify-center text-slate-500 hover:text-slate-950 transition-all";
+      darkBtn.className = "flex-1 py-1.5 rounded-xl flex items-center justify-center text-slate-500 hover:text-slate-950 transition-all";
+      systemBtn.className = "flex-1 py-1.5 rounded-xl flex items-center justify-center text-slate-500 hover:text-slate-950 transition-all";
+
+      if (mode === 'light') {
+        document.documentElement.classList.remove('dark');
+        lightBtn.classList.add('bg-white', 'text-amber-500', 'shadow-sm');
+        localStorage.setItem('theme', 'light');
+      } else if (mode === 'dark') {
+        document.documentElement.classList.add('dark');
+        darkBtn.classList.add('bg-slate-800', 'text-amber-500', 'shadow-sm');
+        localStorage.setItem('theme', 'dark');
+      } else {
+        localStorage.removeItem('theme');
+        systemBtn.classList.add('bg-white', 'dark:bg-slate-800', 'text-amber-500', 'shadow-sm');
+        if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+          document.documentElement.classList.add('dark');
+        } else {
+          document.documentElement.classList.remove('dark');
+        }
+      }
+    }
+
+    // Load initial theme choice
+    const savedTheme = localStorage.getItem('theme');
+    if (savedTheme) {
+      setTheme(savedTheme);
+    } else {
+      setTheme('system');
+    }
+
+    // ----- Data Load/Fetch -----
+    async function loadAllAppData() {
+      if (token === 'fallback-token') {
+        // Fallback calculations using localDB
+        calculateFallbackDashboard();
+        return;
+      }
+
+      try {
+        const dashRes = await fetch(`${API}?action=getDashboard`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ token })
+        });
+        dashboardData = await dashRes.json();
+
+        const txRes = await fetch(`${API}?action=getTransactions`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ token })
+        });
+        transactionData = await txRes.json();
+
+        const histRes = await fetch(`${API}?action=getHistory`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ token })
+        });
+        historyData = await histRes.json();
+
+        // Update Undo/Redo lists
+        historyData.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+        undoStack = historyData.filter(h => !h.undone);
+        redoStack = historyData.filter(h => h.undone);
+
+        renderDashboard();
+      } catch (err) {
+        console.error("API error, dropping back to demo localDB calculations", err);
+        calculateFallbackDashboard();
+      }
+    }
+
+    // ----- FALLBACK DEMO CALCULATIONS -----
+    function calculateFallbackDashboard() {
+      // Manual sums
+      let walletSum = 0;
+      let savingsSum = 0;
+      localDB.transactions.forEach(t => {
+        if (t.Type === 'income') {
+          walletSum += Number(t.Amount);
+        } else if (t.Type === 'refill') {
+          walletSum -= Number(t.Amount);
+        } else if (t.Type === 'savings') {
+          savingsSum += Number(t.Amount);
+        } else if (t.Type === 'savings_usage') {
+          savingsSum -= Number(t.Amount);
+        } else if (t.Type === 'savings_topup') {
+          savingsSum += Number(t.Amount);
+        }
+      });
+
+      const mamaAccount = walletSum + localDB.offsets.wallet;
+      const savingsBalance = savingsSum + localDB.offsets.savings;
+      const totalRemaining = mamaAccount + savingsBalance;
+
+      dashboardData = {
+        mamaAccount,
+        savingsBalance,
+        totalRemaining,
+        offsets: localDB.offsets,
+        allowanceStats: localDB.allowanceStats,
+        savingsStats: localDB.savingsStats,
+        monthlyTransfers: localDB.transactions.filter(t => t.Type === 'refill').map(t => ({ month: new Date(t.Date).toLocaleString('default', { month: 'short', year: 'numeric' }), amount: Number(t.Amount) })),
+        bankAccounts: BANK_ACCOUNTS_MOCK
+      };
+
+      transactionData = localDB.transactions.map(t => ({
+        date: t.Date,
+        type: t.Type,
+        amount: Number(t.Amount),
+        note: t.Note,
+        id: t.ID
+      }));
+
+      historyData = localDB.history.map(h => ({
+        id: h.ID,
+        type: h.Type,
+        details: JSON.parse(h.Details),
+        timestamp: h.Timestamp,
+        undone: h.Undone
+      }));
+
       undoStack = historyData.filter(h => !h.undone);
       redoStack = historyData.filter(h => h.undone);
 
-      renderHistory();
-      updateUndoRedoButtons();
+      renderDashboard();
     }
 
-    function renderHistory() {
-      // Display history in reverse chronological order (most recent first) for UI
-      const sortedHistory = [...historyData].reverse();
-      if (sortedHistory.length === 0) {
-        document.getElementById('historyList').innerHTML = '<div style="padding: 10px; text-align: center; color: var(--text-secondary); font-size: 0.85rem;">No history recorded yet</div>';
+    // ----- Dashboard Rendering -----
+    function renderDashboard() {
+      if (!dashboardData) return;
+
+      // Update Top card sums
+      document.getElementById('mamaBalance').textContent = `RM ${dashboardData.mamaAccount.toFixed(2)}`;
+      document.getElementById('savingsBalance').textContent = `RM ${dashboardData.savingsBalance.toFixed(2)}`;
+      document.getElementById('totalRemaining').textContent = `RM ${dashboardData.totalRemaining.toFixed(2)}`;
+
+      // Update Diagram Nodes
+      document.getElementById('nodeMamaVal').textContent = `RM ${dashboardData.mamaAccount.toFixed(2)}`;
+      document.getElementById('nodeWalletVal').textContent = `RM ${dashboardData.mamaAccount.toFixed(2)}`;
+      document.getElementById('nodeSavingsVal').textContent = `RM ${dashboardData.savingsBalance.toFixed(2)}`;
+
+      // Load Settings offsets placeholders
+      document.getElementById('settingWalletOffset').value = dashboardData.offsets.wallet;
+      document.getElementById('settingSavingsOffset').value = dashboardData.offsets.savings;
+
+      // Top-up Month Options list in modal
+      const topUpSelect = document.getElementById('topUpMonthSelect');
+      topUpSelect.innerHTML = dashboardData.savingsStats.map(s =>
+        `<option value="${s.month}">${s.month} (Used: RM ${(s.usage || 0).toFixed(2)})</option>`
+      ).join('');
+
+      // Enable Undo Redo controls if available
+      document.getElementById('topUndoBtn').disabled = (undoStack.length === 0);
+      document.getElementById('topRedoBtn').disabled = (redoStack.length === 0);
+
+      // Render Bank Accounts widgets
+      const renderBanks = (containerId) => {
+        const cont = document.getElementById(containerId);
+        cont.innerHTML = dashboardData.bankAccounts.map((b, idx) => `
+          <div class="p-3 bg-slate-50 dark:bg-slate-900 rounded-2xl flex items-center justify-between border border-slate-100 dark:border-slate-800">
+            <div>
+              <p class="text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider">${b.name}</p>
+              <p class="text-sm font-semibold text-slate-800 dark:text-slate-200">${b.number}</p>
+            </div>
+            <button onclick="copyToClipboard('${b.number}', 'copyBank-${containerId}-${idx}')" id="copyBank-${containerId}-${idx}" class="p-2 bg-white dark:bg-slate-800 hover:bg-slate-100 rounded-xl shadow-sm text-slate-500 transition-all">
+              <i data-lucide="copy" class="w-4 h-4"></i>
+            </button>
+          </div>
+        `).join('');
+      };
+      renderBanks('dashboardBankAccounts');
+      renderBanks('transferBankAccounts');
+
+      // Table 1: Allowance Stats
+      const allowanceTbody = document.getElementById('allowanceStatsTbody');
+      allowanceTbody.innerHTML = dashboardData.allowanceStats.map(s => `
+        <tr class="border-b border-slate-100 dark:border-slate-800/40 text-slate-700 dark:text-slate-300">
+          <td class="py-3 font-medium">${s.month}</td>
+          <td class="py-3 font-semibold">RM ${(s.allowance || 430).toFixed(2)}</td>
+          <td class="py-3 text-red-500 font-semibold">RM ${(s.usage || 0).toFixed(2)}</td>
+          <td class="py-3 text-emerald-500 font-bold">RM ${(s.balance || 0).toFixed(2)}</td>
+        </tr>
+      `).join('');
+
+      // Table 2: Savings Stats
+      const savingsTbody = document.getElementById('savingsStatsTbody');
+      savingsTbody.innerHTML = dashboardData.savingsStats.map(s => `
+        <tr class="border-b border-slate-100 dark:border-slate-800/40 text-slate-700 dark:text-slate-300">
+          <td class="py-3 font-medium">${s.month}</td>
+          <td class="py-3 font-semibold">RM ${(s.savings || 30).toFixed(2)}</td>
+          <td class="py-3 text-red-400">RM ${(s.usage || 0).toFixed(2)}</td>
+          <td class="py-3 text-emerald-500 font-bold">RM ${(s.balance || 0).toFixed(2)}</td>
+        </tr>
+      `).join('');
+
+      lucide.createIcons();
+    }
+
+    // ----- Transactions Tab rendering -----
+    function renderTransactionsPage() {
+      const actList = document.getElementById('activityList');
+      if (transactionData.length === 0) {
+        actList.innerHTML = `<div class="p-8 text-center text-slate-400 text-sm">No transaction records recorded yet</div>`;
         return;
       }
-      document.getElementById('historyList').innerHTML = sortedHistory.map(h => `
-        <div class="history-item" style="display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 6px 0; border-bottom: 1px solid var(--table-border);">
-          <span style="${h.undone ? 'text-decoration: line-through; color: var(--text-secondary);' : ''}; font-size: 0.8rem;">
-            <strong>${h.type}</strong> – ${new Date(h.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
-          </span>
-          ${h.undone ?
-            `<button class="btn" style="padding: 4px 8px; font-size: 0.65rem;" onclick="redoHistory('${h.id}')">↪ Redo</button>` :
-            `<button class="btn btn-danger" style="padding: 4px 8px; font-size: 0.65rem;" onclick="undoHistory('${h.id}')">↩ Undo</button>`
-          }
-        </div>`).join('');
+
+      // Sort newest first
+      const sortedTxs = [...transactionData].sort((a,b) => new Date(b.date) - new Date(a.date));
+
+      actList.innerHTML = sortedTxs.map(t => {
+        let icon = 'arrow-up-right';
+        let badgeColor = 'bg-emerald-50 dark:bg-emerald-950/20 text-emerald-500';
+        let amountPrefix = '+';
+        let amountColor = 'text-emerald-500';
+
+        if (t.type === 'refill' || t.type === 'savings_usage') {
+          icon = 'arrow-down-left';
+          badgeColor = 'bg-red-50 dark:bg-red-950/20 text-red-500';
+          amountPrefix = '-';
+          amountColor = 'text-red-500';
+        }
+
+        return `
+          <div class="p-4 flex items-center justify-between hover:bg-slate-50/60 dark:hover:bg-slate-900/10 transition-all">
+            <div class="flex items-center gap-4">
+              <!-- circular green arrow icons -->
+              <div class="w-10 h-10 rounded-full flex items-center justify-center ${badgeColor}">
+                <i data-lucide="${icon}" class="w-5 h-5"></i>
+              </div>
+              <div>
+                <p class="text-sm font-bold text-slate-900 dark:text-white capitalize">${t.note || t.type}</p>
+                <p class="text-xs text-slate-400 dark:text-slate-500">${new Date(t.date).toLocaleString('en-GB')}</p>
+              </div>
+            </div>
+            <!-- Bold green credit indicators / RM values -->
+            <span class="text-sm font-extrabold ${amountColor}">
+              ${amountPrefix}RM ${t.amount.toFixed(2)}
+            </span>
+          </div>
+        `;
+      }).join('');
+      lucide.createIcons();
     }
 
-    async function undoHistory(id) {
-      if (!confirm('Undo this action?')) return;
-      const res = await fetch(`${API}?action=undoAction`, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({token, actionId:id})});
-      const data = await res.json();
-      if (data.error) alert(data.error);
-      await loadHistory();
-      await loadDashboard();
+    // ----- Transfers Tab rendering -----
+    function renderTransfersPage() {
+      const tbody = document.getElementById('transferHistoryTbody');
+      const transfersOnly = transactionData.filter(t => t.type === 'refill');
+
+      if (transfersOnly.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="4" class="py-4 text-center text-slate-400 text-xs">No requested transfers recorded</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = transfersOnly.map(t => `
+        <tr class="border-b border-slate-150 dark:border-slate-800 text-slate-700 dark:text-slate-300">
+          <td class="py-3 font-medium">${new Date(t.date).toLocaleDateString('en-GB')}</td>
+          <td class="py-3 uppercase text-xs font-bold text-slate-500">Mama Transfer</td>
+          <td class="py-3 font-extrabold text-slate-900 dark:text-white">RM ${t.amount.toFixed(2)}</td>
+          <td class="py-3 text-xs text-slate-500">${t.note || 'Transfer Refill'}</td>
+        </tr>
+      `).join('');
     }
 
-    async function redoHistory(id) {
-      if (!confirm('Redo this action?')) return;
-      const res = await fetch(`${API}?action=redoAction`, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({token, actionId:id})});
-      const data = await res.json();
-      if (data.error) alert(data.error);
-      await loadHistory();
-      await loadDashboard();
+    // ----- Analytics page calculations -----
+    function renderAnalyticsPage() {
+      let refillTotal = 0;
+      let savingsTotal = 0;
+      let incomeTotal = 0;
+
+      transactionData.forEach(t => {
+        if (t.type === 'refill' || t.type === 'savings_usage') {
+          refillTotal += Number(t.amount);
+        } else if (t.type === 'savings' || t.type === 'savings_topup') {
+          savingsTotal += Number(t.amount);
+        } else if (t.type === 'income') {
+          incomeTotal += Number(t.amount);
+        }
+      });
+
+      const grandTotal = refillTotal + savingsTotal + incomeTotal || 1;
+      const refPerc = Math.round((refillTotal / grandTotal) * 100);
+      const savPerc = Math.round((savingsTotal / grandTotal) * 100);
+      const incPerc = Math.round((incomeTotal / grandTotal) * 100);
+
+      document.getElementById('catRefillPercent').textContent = `${refPerc}%`;
+      document.getElementById('catRefillBar').style.width = `${refPerc}%`;
+
+      document.getElementById('catSavingsPercent').textContent = `${savPerc}%`;
+      document.getElementById('catSavingsBar').style.width = `${savPerc}%`;
+
+      document.getElementById('catIncomePercent').textContent = `${incPerc}%`;
+      document.getElementById('catIncomeBar').style.width = `${incPerc}%`;
     }
 
-    function toggleHistory() { document.getElementById('historyPanel').classList.toggle('open'); }
+    // ----- History Tab Ledger Rendering -----
+    function renderHistoryPage() {
+      const list = document.getElementById('historyLedgerList');
+      if (historyData.length === 0) {
+        list.innerHTML = `<div class="p-8 text-center text-slate-400 text-sm">No action logs found.</div>`;
+        return;
+      }
 
-    // ----- Undo/Redo -----
+      // Sort newest first
+      const sortedHistory = [...historyData].sort((a,b) => new Date(b.timestamp) - new Date(a.timestamp));
+
+      list.innerHTML = sortedHistory.map(h => {
+        const detailsObj = h.details || {};
+        const isUndone = h.undone;
+
+        return `
+          <div class="bg-white dark:bg-brand-dark-card rounded-2xl p-5 border border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 transition-all hover:border-amber-200">
+            <div>
+              <div class="flex items-center gap-2 mb-2">
+                <!-- category badges -->
+                <span class="px-2.5 py-0.5 bg-slate-100 dark:bg-slate-900 text-slate-600 dark:text-slate-300 rounded-full text-[10px] font-bold uppercase tracking-wider">
+                  UPDATE BALANCES
+                </span>
+                <span class="text-[10px] text-slate-400 dark:text-slate-500">${new Date(h.timestamp).toLocaleString('en-GB')}</span>
+              </div>
+              <p class="text-sm font-bold text-slate-800 dark:text-white ${isUndone ? 'line-through text-slate-400' : ''}">
+                ${h.type.replace(/([A-Z])/g, ' $1').toUpperCase()}: Allocated / Adjusted values inside transactions vault.
+              </p>
+              <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                Details: ${JSON.stringify(detailsObj)}
+              </p>
+            </div>
+            <!-- Individual Redo Button -->
+            ${isUndone ? `
+              <button onclick="redoAction('${h.id}')" class="px-3.5 py-2 bg-brand-yellow hover:bg-brand-yellow-hover text-slate-950 font-bold rounded-xl text-xs flex items-center gap-1.5 transition-all">
+                <i data-lucide="redo" class="w-3.5 h-3.5"></i>
+                Redo
+              </button>
+            ` : `
+              <button onclick="undoAction('${h.id}')" class="px-3.5 py-2 bg-red-50 dark:bg-red-950/20 hover:bg-red-100 text-red-600 dark:text-red-400 font-bold rounded-xl text-xs flex items-center gap-1.5 transition-all">
+                <i data-lucide="undo" class="w-3.5 h-3.5"></i>
+                Undo
+              </button>
+            `}
+          </div>
+        `;
+      }).join('');
+      lucide.createIcons();
+    }
+
+    // ----- Settings Tab Balance Save Changes -----
+    async function saveSettings() {
+      const walletOffset = parseFloat(document.getElementById('settingWalletOffset').value) || 0;
+      const savingsOffset = parseFloat(document.getElementById('settingSavingsOffset').value) || 0;
+
+      if (token === 'fallback-token') {
+        localDB.offsets.wallet = walletOffset;
+        localDB.offsets.savings = savingsOffset;
+
+        // Add action to fallback history
+        localDB.history.push({
+          ID: 'h-' + Math.random().toString(),
+          Type: 'setOffsets',
+          Details: JSON.stringify({ wallet: walletOffset, savings: savingsOffset, oldWallet: dashboardData.offsets.wallet, oldSavings: dashboardData.offsets.savings }),
+          Timestamp: new Date().toISOString(),
+          Undone: false
+        });
+        saveLocalDB();
+        alert('Offset levels manually saved to fallback database successfully.');
+        loadAllAppData();
+        return;
+      }
+
+      try {
+        const res = await fetch(`${API}?action=setOffsets`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ token, walletOffset, savingsOffset })
+        });
+        const data = await res.json();
+        if (data.success) {
+          alert('Manual offsets saved successfully.');
+          loadAllAppData();
+        } else {
+          alert('Error: ' + data.error);
+        }
+      } catch (err) {
+        alert('Error: Network or sheets connection timeout. Saving locally.');
+      }
+    }
+
+    // ----- Undo / Redo Actions -----
     async function undo() {
       if (undoStack.length === 0) return;
       const action = undoStack[undoStack.length - 1];
-      const res = await fetch(`${API}?action=undoAction`, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({token, actionId:action.id})});
-      const data = await res.json();
-      if (data.error) alert(data.error);
-      await loadHistory();
-      await loadDashboard();
+      await undoAction(action.id);
     }
 
     async function redo() {
       if (redoStack.length === 0) return;
       const action = redoStack[redoStack.length - 1];
-      const res = await fetch(`${API}?action=redoAction`, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({token, actionId:action.id})});
-      const data = await res.json();
-      if (data.error) alert(data.error);
-      await loadHistory();
-      await loadDashboard();
+      await redoAction(action.id);
     }
 
-    function updateUndoRedoButtons() {
-      document.getElementById('undoBtn').disabled = undoStack.length === 0;
-      document.getElementById('redoBtn').disabled = redoStack.length === 0;
-    }
-
-    // ----- Profile -----
-    function updateGreeting() {
-      const h = new Date().getHours();
-      document.getElementById('greeting').textContent = h<12?'Good morning!':(h<18?'Good afternoon!':'Good evening!');
-      document.getElementById('currentDate').textContent = new Date().toLocaleDateString('en-US',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
-    }
-
-    // ----- Offsets Modal -----
-    function openOffsetModal() { document.getElementById('offsetModal').classList.add('active'); }
-    function closeOffsetModal() { document.getElementById('offsetModal').classList.remove('active'); }
-    async function saveOffsets() {
-      const w = parseFloat(document.getElementById('walletOffset').value)||0, s = parseFloat(document.getElementById('savingsOffset').value)||0;
-      await fetch(`${API}?action=setOffsets`, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({token, walletOffset:w, savingsOffset:s})});
-      closeOffsetModal(); loadDashboard(); loadHistory();
-    }
-
-    // ----- Use Savings Modal -----
-    function openUseSavingsModal() {
-      document.getElementById('useSavingsAmount').value = '';
-      document.getElementById('useSavingsModal').classList.add('active');
-    }
-    function closeUseSavingsModal() {
-      document.getElementById('useSavingsModal').classList.remove('active');
-    }
-    async function handleUseSavings() {
-      const amountInput = document.getElementById('useSavingsAmount');
-      const amount = parseFloat(amountInput.value);
-      if (isNaN(amount) || amount <= 0) {
-        alert('Please enter a valid amount.');
+    async function undoAction(actionId) {
+      if (token === 'fallback-token') {
+        const action = localDB.history.find(h => h.ID === actionId);
+        if (action) {
+          action.Undone = true;
+          // Reverse logic inside fallback if applicable, otherwise flag state
+          saveLocalDB();
+          alert('Successfully Undone Action (Demo State flag updated)');
+          loadAllAppData();
+        }
         return;
       }
-      if (!confirm(`Are you sure you want to withdraw RM ${amount.toFixed(2)} from savings?`)) return;
 
-      const res = await fetch(`${API}?action=useSavings`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ token, amount })
-      });
-      const data = await res.json();
-      if (data.error) {
-        alert(data.error);
-      } else {
-        closeUseSavingsModal();
-        alert('Savings withdrawn successfully!');
-        await loadDashboard();
-        await loadHistory();
+      try {
+        const res = await fetch(`${API}?action=undoAction`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ token, actionId })
+        });
+        const data = await res.json();
+        if (data.success) {
+          loadAllAppData();
+        } else {
+          alert('Undo failed: ' + data.error);
+        }
+      } catch (e) {
+        alert('Error connecting to Server API');
       }
     }
 
-    // ----- Top Up Savings Modal -----
-    function openTopUpSavingsModal() {
-      const select = document.getElementById('topUpMonth');
-      if (dashboardData && dashboardData.savingsStats && dashboardData.savingsStats.length > 0) {
-        select.innerHTML = dashboardData.savingsStats.map(s =>
-          `<option value="${s.month}">${s.month} (Used: RM ${s.usage.toFixed(2)})</option>`
-        ).join('');
-      } else {
-        select.innerHTML = '<option value="">No months available</option>';
-      }
-      document.getElementById('topUpAmount').value = '';
-      document.getElementById('topUpSavingsModal').classList.add('active');
-    }
-    function closeTopUpSavingsModal() {
-      document.getElementById('topUpSavingsModal').classList.remove('active');
-    }
-    async function handleTopUpSavings() {
-      const month = document.getElementById('topUpMonth').value;
-      const amountInput = document.getElementById('topUpAmount');
-      const amount = parseFloat(amountInput.value);
-      if (!month) {
-        alert('Please select a month.');
+    async function redoAction(actionId) {
+      if (token === 'fallback-token') {
+        const action = localDB.history.find(h => h.ID === actionId);
+        if (action) {
+          action.Undone = false;
+          saveLocalDB();
+          alert('Successfully Redone Action (Demo State flag updated)');
+          loadAllAppData();
+        }
         return;
       }
-      if (isNaN(amount) || amount <= 0) {
-        alert('Please enter a valid amount.');
-        return;
-      }
-      if (!confirm(`Are you sure you want to top up RM ${amount.toFixed(2)} for ${month}?`)) return;
 
-      const res = await fetch(`${API}?action=topUpSavings`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ token, months: [{ month }], totalAmount: amount })
-      });
-      const data = await res.json();
-      if (data.error) {
-        alert(data.error);
-      } else {
-        closeTopUpSavingsModal();
-        alert('Savings topped up successfully!');
-        await loadDashboard();
-        await loadHistory();
+      try {
+        const res = await fetch(`${API}?action=redoAction`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ token, actionId })
+        });
+        const data = await res.json();
+        if (data.success) {
+          loadAllAppData();
+        } else {
+          alert('Redo failed: ' + data.error);
+        }
+      } catch (e) {
+        alert('Error connecting to Server API');
       }
     }
 
-    // ----- Request Money -----
-    async function handleRequestMoney() {
-      const amountInput = document.getElementById('requestAmount');
-      const amount = parseFloat(amountInput.value);
-      if (isNaN(amount) || amount <= 0) {
-        alert('Please enter a valid amount.');
-        return;
-      }
-      if (!confirm(`Are you sure you want to request RM ${amount.toFixed(2)} from Mama?`)) return;
-
-      const res = await fetch(`${API}?action=requestMoney`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ token, amount })
-      });
-      const data = await res.json();
-      if (data.error) {
-        alert(data.error);
-      } else {
-        amountInput.value = '';
-        alert('Money requested successfully!');
-        await loadDashboard();
-        await loadHistory();
-      }
-    }
-
-    // ----- Process New Month -----
+    // ----- Request New Month Trigger -----
     async function handleProcessNewMonth() {
-      if (!confirm('Are you sure you want to start a new month? This will allocate RM 430.00, set RM 30.00 to savings, RM 100.00 to Maybank usage, and add RM 300.00 to Mama Account.')) return;
+      if (!confirm('Start a new student allowance tracking month? This triggers Google formulas allocation updates.')) return;
 
-      const res = await fetch(`${API}?action=processNewMonth`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ token })
-      });
-      const data = await res.json();
-      if (data.error) {
-        alert(data.error);
-      } else {
-        alert(`Successfully processed new month: ${data.month}`);
-        await loadDashboard();
-        await loadHistory();
+      if (token === 'fallback-token') {
+        localDB.history.push({
+          ID: 'h-' + Math.random().toString(),
+          Type: 'newMonth',
+          Details: JSON.stringify({ month: 'March 2026' }),
+          Timestamp: new Date().toISOString(),
+          Undone: false
+        });
+        saveLocalDB();
+        alert('New month processed (Demo database simulation complete).');
+        loadAllAppData();
+        return;
+      }
+
+      try {
+        const res = await fetch(`${API}?action=processNewMonth`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ token })
+        });
+        const d = await res.json();
+        if (d.success) {
+          alert('Successfully updated sheets: ' + d.month);
+          loadAllAppData();
+        } else {
+          alert('Error: ' + d.error);
+        }
+      } catch (err) {
+        alert('Failed starting new month.');
       }
     }
 
-    // ----- Theme -----
-    function toggleTheme() { document.body.classList.toggle('dark'); localStorage.setItem('theme',document.body.classList.contains('dark')?'dark':'light'); }
-    (() => { const hour=new Date().getHours(); if(hour<7||hour>=19) document.body.classList.add('dark'); if(localStorage.getItem('theme')==='light') document.body.classList.remove('dark'); })();
+    // ----- Modals Toggles -----
+    function openAddExpenseModal() { document.getElementById('addExpenseModal').classList.remove('hidden'); }
+    function closeAddExpenseModal() { document.getElementById('addExpenseModal').classList.add('hidden'); }
 
-    // Init
-    updateGreeting(); setInterval(updateGreeting,60000);
+    function openRequestTransferModal() { document.getElementById('requestTransferModal').classList.remove('hidden'); }
+    function closeRequestTransferModal() { document.getElementById('requestTransferModal').classList.add('hidden'); }
+
+    function openUseSavingsModal() { document.getElementById('useSavingsModal').classList.remove('hidden'); }
+    function closeUseSavingsModal() { document.getElementById('useSavingsModal').classList.add('hidden'); }
+
+    function openTopUpSavingsModal() { document.getElementById('topUpSavingsModal').classList.remove('hidden'); }
+    function closeTopUpSavingsModal() { document.getElementById('topUpSavingsModal').classList.add('hidden'); }
+
+    // ----- Submit handlers inside modals -----
+    async function submitAddExpense() {
+      const type = document.getElementById('expenseType').value;
+      const amount = parseFloat(document.getElementById('expenseAmount').value) || 0;
+      const note = document.getElementById('expenseNote').value;
+
+      if (token === 'fallback-token') {
+        const txId = 'tx-added-' + Math.random().toString();
+        localDB.transactions.push({ Date: new Date().toISOString(), Type: type, Amount: amount, Note: note, ID: txId });
+        localDB.history.push({
+          ID: 'h-add-' + Math.random().toString(),
+          Type: 'addTransaction',
+          Details: JSON.stringify({ type, amount, note, txId }),
+          Timestamp: new Date().toISOString(),
+          Undone: false
+        });
+        saveLocalDB();
+        closeAddExpenseModal();
+        alert('Expense recorded in demo fallbacks.');
+        loadAllAppData();
+        return;
+      }
+
+      try {
+        const res = await fetch(`${API}?action=addTransaction`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ token, type, amount, note })
+        });
+        const data = await res.json();
+        if (data.success) {
+          closeAddExpenseModal();
+          loadAllAppData();
+        } else {
+          alert('Add expense error: ' + data.error);
+        }
+      } catch (e) {
+        alert('Network error submitting transaction.');
+      }
+    }
+
+    async function submitRequestTransfer() {
+      const amount = parseFloat(document.getElementById('transferAmount').value) || 0;
+
+      if (token === 'fallback-token') {
+        const txId = 'tx-added-' + Math.random().toString();
+        localDB.transactions.push({ Date: new Date().toISOString(), Type: 'refill', Amount: amount, Note: 'Transfer Refill from Mama', ID: txId });
+        localDB.history.push({
+          ID: 'h-refill-' + Math.random().toString(),
+          Type: 'requestMoney',
+          Details: JSON.stringify({ amount, txId }),
+          Timestamp: new Date().toISOString(),
+          Undone: false
+        });
+        saveLocalDB();
+        closeRequestTransferModal();
+        alert('Transfer request recorded in demo fallbacks.');
+        loadAllAppData();
+        return;
+      }
+
+      try {
+        const res = await fetch(`${API}?action=requestMoney`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ token, amount })
+        });
+        const data = await res.json();
+        if (data.transactionId) {
+          closeRequestTransferModal();
+          loadAllAppData();
+        } else {
+          alert('Transfer request error: ' + data.error);
+        }
+      } catch (e) {
+        alert('Network error submitting request.');
+      }
+    }
+
+    async function submitUseSavings() {
+      const amount = parseFloat(document.getElementById('savingsWithdrawAmount').value) || 0;
+
+      if (token === 'fallback-token') {
+        const txId = 'tx-added-' + Math.random().toString();
+        localDB.transactions.push({ Date: new Date().toISOString(), Type: 'savings_usage', Amount: amount, Note: 'Used savings', ID: txId });
+        localDB.history.push({
+          ID: 'h-savings-' + Math.random().toString(),
+          Type: 'useSavings',
+          Details: JSON.stringify({ amount, txId }),
+          Timestamp: new Date().toISOString(),
+          Undone: false
+        });
+        saveLocalDB();
+        closeUseSavingsModal();
+        alert('Savings withdrawal recorded in demo fallbacks.');
+        loadAllAppData();
+        return;
+      }
+
+      try {
+        const res = await fetch(`${API}?action=useSavings`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ token, amount })
+        });
+        const data = await res.json();
+        if (data.transactionId) {
+          closeUseSavingsModal();
+          loadAllAppData();
+        } else {
+          alert('Withdraw failed: ' + data.error);
+        }
+      } catch (e) {
+        alert('Network error withdrawing savings.');
+      }
+    }
+
+    async function submitTopUpSavings() {
+      const month = document.getElementById('topUpMonthSelect').value;
+      const amount = parseFloat(document.getElementById('savingsTopUpAmount').value) || 0;
+
+      if (token === 'fallback-token') {
+        const txId = 'tx-added-' + Math.random().toString();
+        localDB.transactions.push({ Date: new Date().toISOString(), Type: 'savings_topup', Amount: amount, Note: 'Savings top up for ' + month, ID: txId });
+        localDB.history.push({
+          ID: 'h-topup-' + Math.random().toString(),
+          Type: 'topUpSavings',
+          Details: JSON.stringify({ totalAmount: amount, months: [{ month }], txId }),
+          Timestamp: new Date().toISOString(),
+          Undone: false
+        });
+        saveLocalDB();
+        closeTopUpSavingsModal();
+        alert('Savings top up recorded in demo fallbacks.');
+        loadAllAppData();
+        return;
+      }
+
+      try {
+        const res = await fetch(`${API}?action=topUpSavings`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ token, months: [{ month }], totalAmount: amount })
+        });
+        const data = await res.json();
+        if (data.transactionId) {
+          closeTopUpSavingsModal();
+          loadAllAppData();
+        } else {
+          alert('Top up failed: ' + data.error);
+        }
+      } catch (e) {
+        alert('Network error topping up savings.');
+      }
+    }
+
   </script>
 </body>
 </html>
