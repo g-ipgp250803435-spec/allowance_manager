@@ -1,3 +1,21 @@
+// Cached connection (add this near the top of api/index.js)
+let _docCache = null;
+let _docCacheTime = 0;
+
+async function getDoc() {
+  const now = Date.now();
+  if (_docCache && (now - _docCacheTime) < 5000) return _docCache;
+  const doc = new GoogleSpreadsheet(process.env.GOOGLE_SHEET_ID);
+  await doc.useServiceAccountAuth({
+    client_email: process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL,
+    private_key: (process.env.GOOGLE_PRIVATE_KEY || '').replace(/\\n/g, '\n'),
+  });
+  await doc.loadInfo();
+  _docCache = doc;
+  _docCacheTime = now;
+  return doc;
+}
+
 const { GoogleSpreadsheet } = require('google-spreadsheet');
 const cors = require('cors');
 
