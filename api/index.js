@@ -91,6 +91,8 @@ module.exports = async (req, res) => {
         case 'topUpSavings': result = await topUpSavings(doc, body.months, body.totalAmount); break;
         case 'setOffsets': result = await setOffsets(doc, body.walletOffset, body.savingsOffset); break;
         case 'getHistory': result = await getHistory(doc); break;
+        case 'getTransactions': result = await getTransactions(doc); break;
+        case 'addTransaction': result = await addTransaction(doc, body.type, body.amount, body.note); break;
         case 'redoAction': result = await redoAction(doc, body.actionId); break;
         case 'undoAction': result = await undoAction(doc, body.actionId); break;
         default: result = { error: 'Unknown action' };
@@ -126,6 +128,28 @@ async function getDashboardData(doc) {
     ],
     lastUpdated: new Date().toISOString()
   };
+}
+
+// ---------- Transactions Extra ----------
+async function getTransactions(doc) {
+  const sheet = await getOrCreateSheet(doc, 'transactions', ['Date', 'Type', 'Amount', 'Note', 'ID']);
+  const rows = await sheet.getRows();
+  return rows.map(r => ({
+    date: r.Date,
+    type: r.Type,
+    amount: Number(r.Amount) || 0,
+    note: r.Note,
+    id: r.ID
+  }));
+}
+
+async function addTransaction(doc, type, amount, note) {
+  const sheet = await getOrCreateSheet(doc, 'transactions', ['Date', 'Type', 'Amount', 'Note', 'ID']);
+  const txId = uuid();
+  const dateStr = new Date().toISOString();
+  await sheet.addRow({ Date: dateStr, Type: type, Amount: amount, Note: note, ID: txId });
+  await addHistory(doc, 'addTransaction', { type, amount, note, txId });
+  return { success: true, transactionId: txId };
 }
 
 // ---------- Balances ----------
@@ -356,6 +380,7 @@ async function redoAction(doc, actionId) {
     case 'useSavings': await useSavings(doc, details.amount); break;
     case 'topUpSavings': await topUpSavings(doc, details.months, details.totalAmount); break;
     case 'setOffsets': await setOffsets(doc, details.wallet, details.savings); break;
+    case 'addTransaction': await addTransaction(doc, details.type, details.amount, details.note); break;
   }
   action.Undone = false;
   await action.save();
@@ -451,6 +476,14 @@ async function undoAction(doc, actionId) {
       break;
     case 'setOffsets':
       await setOffsets(doc, details.oldWallet, details.oldSavings);
+      break;
+    case 'addTransaction':
+      const txSheet5 = doc.sheetsByTitle['transactions'];
+      if (txSheet5) {
+        const tx5Rows = await txSheet5.getRows();
+        const tx5Found = tx5Rows.find(r => r.ID === details.txId);
+        if (tx5Found) await tx5Found.delete();
+      }
       break;
   }
   action.Undone = true;
