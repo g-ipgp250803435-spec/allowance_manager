@@ -275,7 +275,7 @@
                 <h3 class="text-sm font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-4">Allowance Statistics</h3>
                 <div class="overflow-x-auto">
                   <table class="w-full text-left text-xs border-collapse">
-                    <thead><tr class="border-b border-slate-200 dark:border-slate-800 text-slate-400"><th class="py-2.5">Month</th><th class="py-2.5">Allowance</th><th class="py-2.5">Usage</th><th class="py-2.5">Balance</th></tr></thead>
+                    <thead><tr class="border-b border-slate-200 dark:border-slate-800 text-slate-400"><th class="py-2.5">Month</th><th class="py-2.5">Date Received</th><th class="py-2.5">Allowance</th><th class="py-2.5">Usage</th><th class="py-2.5">Balance</th></tr></thead>
                     <tbody id="allowanceStatsTbody"></tbody>
                   </table>
                 </div>
@@ -474,6 +474,15 @@
         <div>
           <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">Year</label>
           <input type="number" id="newYearSelector" required class="w-full px-4 py-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl focus:ring-2 focus:ring-brand-yellow focus:border-brand-yellow outline-none text-slate-900 dark:text-white">
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">Date Allowance Received</label>
+          <div class="relative">
+            <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400">
+              <i data-lucide="calendar" class="w-5 h-5"></i>
+            </span>
+            <input type="date" id="newMonthDateReceived" required class="w-full pl-10 pr-4 py-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl focus:ring-2 focus:ring-brand-yellow focus:border-brand-yellow outline-none text-slate-900 dark:text-white">
+          </div>
         </div>
         <div class="flex gap-3">
           <button type="button" onclick="closeNewMonthModal()" class="flex-1 py-3 bg-slate-100 dark:bg-slate-800 rounded-2xl text-slate-700 dark:text-slate-300">Cancel</button>
@@ -796,8 +805,22 @@
       renderBanks('dashboardBankAccounts');
       renderBanks('transferBankAccounts');
 
-      document.getElementById('allowanceStatsTbody').innerHTML = dashboardData.allowanceStats.map(s => `
-        <tr class="border-b"><td class="py-3 font-medium">${s.month}</td><td class="py-3 font-semibold">RM${(s.allowance||430).toFixed(2)}</td><td class="py-3 text-red-500 font-semibold">RM${(s.usage||0).toFixed(2)}</td><td class="py-3 text-emerald-500 font-bold">RM${(s.balance||0).toFixed(2)}</td></tr>`).join('');
+      document.getElementById('allowanceStatsTbody').innerHTML = dashboardData.allowanceStats.map((s, idx) => {
+        const displayDate = s.dateReceived || '--';
+        return `
+        <tr class="border-b">
+          <td class="py-3 font-medium">${s.month}</td>
+          <td class="py-3 cursor-pointer select-none group relative" onclick="startEditDateReceived(this, '${s.month.replace(/'/g, "\\'")}', '${displayDate}')">
+            <span class="inline-flex items-center gap-1 hover:text-amber-500 transition-colors">
+              <i data-lucide="calendar" class="w-3.5 h-3.5 opacity-60 group-hover:opacity-100"></i>
+              <span class="date-text">${displayDate}</span>
+            </span>
+          </td>
+          <td class="py-3 font-semibold">RM${(s.allowance||430).toFixed(2)}</td>
+          <td class="py-3 text-red-500 font-semibold">RM${(s.usage||0).toFixed(2)}</td>
+          <td class="py-3 text-emerald-500 font-bold">RM${(s.balance||0).toFixed(2)}</td>
+        </tr>`;
+      }).join('');
       document.getElementById('savingsStatsTbody').innerHTML = dashboardData.savingsStats.map(s => `
         <tr class="border-b"><td class="py-3 font-medium">${s.month}</td><td class="py-3 font-semibold">RM${(s.savings||30).toFixed(2)}</td><td class="py-3 text-red-400">RM${(s.usage||0).toFixed(2)}</td><td class="py-3 text-emerald-500 font-bold">RM${(s.balance||0).toFixed(2)}</td></tr>`).join('');
       lucide.createIcons();
@@ -808,7 +831,26 @@
       if (!transactionData.length) { list.innerHTML = '<div class="p-8 text-center text-slate-400 text-sm">No records</div>'; return; }
       list.innerHTML = [...transactionData].sort((a,b) => new Date(b.date) - new Date(a.date)).map(t => {
         const isOut = t.type === 'refill' || t.type === 'savings_usage';
-        return `<div class="p-4 flex items-center justify-between"><div class="flex items-center gap-4"><div class="w-10 h-10 rounded-full flex items-center justify-center ${isOut?'bg-red-50 text-red-500':'bg-emerald-50 text-emerald-500'}"><i data-lucide="${isOut?'arrow-down-left':'arrow-up-right'}" class="w-5 h-5"></i></div><div><p class="text-sm font-bold">${t.note||t.type}</p><p class="text-xs text-slate-400">${new Date(t.date).toLocaleString('en-GB')}</p></div></div><span class="text-sm font-extrabold ${isOut?'text-red-500':'text-emerald-500'}">${isOut?'-':'+'}RM${t.amount.toFixed(2)}</span></div>`;
+        return `
+        <div class="p-4 flex items-center justify-between hover:bg-slate-50/50 dark:hover:bg-slate-900/10 transition-colors">
+          <div class="flex items-center gap-4">
+            <div class="w-10 h-10 rounded-full flex items-center justify-center ${isOut?'bg-red-50 text-red-500':'bg-emerald-50 text-emerald-500'}">
+              <i data-lucide="${isOut?'arrow-down-left':'arrow-up-right'}" class="w-5 h-5"></i>
+            </div>
+            <div>
+              <p class="text-sm font-bold">${t.note||t.type}</p>
+              <p class="text-xs text-slate-400">${new Date(t.date).toLocaleString('en-GB')}</p>
+            </div>
+          </div>
+          <div class="flex items-center gap-4">
+            <span class="text-sm font-extrabold ${isOut?'text-red-500':'text-emerald-500'}">
+              ${isOut?'-':'+'}RM${t.amount.toFixed(2)}
+            </span>
+            <button onclick="openDeleteTransactionModal('${t.id}')" class="p-2 text-red-400 hover:text-red-600 dark:hover:text-red-400/80 hover:bg-red-50 dark:hover:bg-red-950/20 rounded-xl transition-all" title="Delete Transaction">
+              <i data-lucide="trash-2" class="w-4 h-4"></i>
+            </button>
+          </div>
+        </div>`;
       }).join('');
       lucide.createIcons();
     }
@@ -882,7 +924,15 @@
       const now = new Date();
       document.getElementById('newMonthSelector').value = now.toLocaleString('default', { month: 'long' });
       document.getElementById('newYearSelector').value = now.getFullYear();
+
+      // Pre-fill with today's local date in YYYY-MM-DD
+      const localYear = now.getFullYear();
+      const localMonth = String(now.getMonth() + 1).padStart(2, '0');
+      const localDay = String(now.getDate()).padStart(2, '0');
+      document.getElementById('newMonthDateReceived').value = `${localYear}-${localMonth}-${localDay}`;
+
       document.getElementById('newMonthModal').classList.remove('hidden');
+      lucide.createIcons();
     }
 
     function closeNewMonthModal() {
@@ -892,7 +942,17 @@
     async function submitProcessNewMonth() {
       const month = document.getElementById('newMonthSelector').value;
       const year = parseInt(document.getElementById('newYearSelector').value) || new Date().getFullYear();
+      const rawDate = document.getElementById('newMonthDateReceived').value;
       closeNewMonthModal();
+
+      // Convert rawDate YYYY-MM-DD to DD/MM/YYYY
+      let dateReceivedFormatted = '';
+      if (rawDate) {
+        const parts = rawDate.split('-');
+        if (parts.length === 3) {
+          dateReceivedFormatted = `${parts[2]}/${parts[1]}/${parts[0]}`;
+        }
+      }
 
       const confirmed = await showConfirm(`Start a new allowance month for ${month} ${year}?`, 'Process New Month');
       if (!confirmed) return;
@@ -901,7 +961,7 @@
         const res = await fetch(`${API}?action=processNewMonth`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ token, month, year })
+          body: JSON.stringify({ token, month, year, dateReceived: dateReceivedFormatted })
         });
         const d = await res.json();
         if (d.success) {
@@ -946,6 +1006,141 @@
       } catch(e) {
         showToast('Connection error', 'error');
       }
+    }
+
+    // ----- Delete Transaction Modal Handlers -----
+    let transactionIdToDelete = null;
+
+    function openDeleteTransactionModal(txId) {
+      const tx = transactionData.find(t => t.id === txId);
+      if (!tx) {
+        showToast('Transaction details not found', 'error');
+        return;
+      }
+      transactionIdToDelete = txId;
+
+      document.getElementById('delTxType').textContent = tx.type;
+      document.getElementById('delTxAmount').textContent = `RM${tx.amount.toFixed(2)}`;
+      document.getElementById('delTxNote').textContent = tx.note || '--';
+      document.getElementById('delTxDate').textContent = new Date(tx.date).toLocaleString('en-GB');
+
+      document.getElementById('deleteTransactionModal').classList.remove('hidden');
+      lucide.createIcons();
+    }
+
+    function closeDeleteTransactionModal() {
+      document.getElementById('deleteTransactionModal').classList.add('hidden');
+      transactionIdToDelete = null;
+    }
+
+    async function submitDeleteTransaction() {
+      if (!transactionIdToDelete) return;
+      const confirmBtn = document.getElementById('confirmDeleteTxBtn');
+      confirmBtn.disabled = true;
+      confirmBtn.innerHTML = `<i data-lucide="loader" class="w-4 h-4 animate-spin"></i> Deleting...`;
+      lucide.createIcons();
+
+      try {
+        const res = await fetch(`${API}?action=deleteTransaction`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ token, transactionId: transactionIdToDelete })
+        });
+        const d = await res.json();
+        if (d.success) {
+          showToast('Transaction deleted successfully', 'success');
+          closeDeleteTransactionModal();
+          loadAllAppData();
+        } else {
+          showToast(d.error || 'Failed to delete transaction', 'error');
+        }
+      } catch (err) {
+        showToast('Connection error deleting transaction', 'error');
+      } finally {
+        confirmBtn.disabled = false;
+        confirmBtn.innerHTML = `<i data-lucide="trash-2" class="w-4 h-4"></i> Delete`;
+        lucide.createIcons();
+      }
+    }
+
+    // ----- Inline Date Edit -----
+    function startEditDateReceived(td, month, currentDateStr) {
+      if (td.querySelector('input')) return; // Already editing
+
+      // Format date from DD/MM/YYYY to YYYY-MM-DD for the date input
+      let inputDateVal = '';
+      if (currentDateStr && currentDateStr !== '--') {
+        const parts = currentDateStr.split('/');
+        if (parts.length === 3) {
+          inputDateVal = `${parts[2]}-${parts[1]}-${parts[0]}`;
+        }
+      }
+
+      // Create inline input element
+      const input = document.createElement('input');
+      input.type = 'date';
+      input.value = inputDateVal;
+      input.className = 'px-2 py-1 text-xs bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded outline-none text-slate-900 dark:text-white';
+
+      const originalHTML = td.innerHTML;
+      td.innerHTML = '';
+      td.appendChild(input);
+      input.focus();
+
+      let isSaving = false;
+      let isCancelled = false;
+
+      const saveEdit = async () => {
+        if (isCancelled || isSaving) return;
+        isSaving = true;
+
+        const newRawDate = input.value;
+        if (!newRawDate) {
+          td.innerHTML = originalHTML;
+          return;
+        }
+
+        // Convert YYYY-MM-DD back to DD/MM/YYYY
+        const parts = newRawDate.split('-');
+        const newFormattedDate = `${parts[2]}/${parts[1]}/${parts[0]}`;
+
+        if (newFormattedDate === currentDateStr) {
+          td.innerHTML = originalHTML;
+          return;
+        }
+
+        try {
+          const res = await fetch(`${API}?action=updateDateReceived`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ token, month, newDate: newFormattedDate })
+          });
+          const d = await res.json();
+          if (d.success) {
+            showToast(`Updated date for ${month} to ${newFormattedDate}`, 'success');
+            loadAllAppData();
+          } else {
+            showToast(d.error || 'Failed to update date', 'error');
+            td.innerHTML = originalHTML;
+          }
+        } catch (err) {
+          showToast('Connection error updating date', 'error');
+          td.innerHTML = originalHTML;
+        }
+      };
+
+      input.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          saveEdit();
+        } else if (e.key === 'Escape') {
+          isCancelled = true;
+          td.innerHTML = originalHTML;
+        }
+      });
+
+      input.addEventListener('blur', () => {
+        saveEdit();
+      });
     }
 
     function openAddExpenseModal() { document.getElementById('addExpenseModal').classList.remove('hidden'); }
@@ -1080,6 +1275,36 @@
       <div class="flex gap-3 justify-end">
         <button id="confirmCancelBtn" type="button" class="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 rounded-2xl text-slate-700 dark:text-slate-300 font-semibold transition-all">Cancel</button>
         <button id="confirmOkBtn" type="button" class="px-5 py-2.5 bg-brand-yellow hover:bg-brand-yellow-hover text-slate-950 font-bold rounded-2xl shadow-lg transition-all">Confirm</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- DELETE TRANSACTION GLASSMORPHISM CONFIRMATION MODAL -->
+  <div id="deleteTransactionModal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm hidden">
+    <div class="bg-white/70 dark:bg-brand-dark-card/70 backdrop-blur-md w-full max-w-md mx-4 p-6 rounded-3xl border border-slate-200/50 dark:border-slate-800/50 shadow-2xl relative">
+      <div class="flex items-start gap-4 mb-6">
+        <div class="p-3 bg-red-100 dark:bg-red-950/40 rounded-2xl text-red-500">
+          <i data-lucide="alert-triangle" class="w-6 h-6"></i>
+        </div>
+        <div>
+          <h3 class="text-lg font-bold text-slate-900 dark:text-white">Delete Transaction</h3>
+          <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">Are you sure you want to permanently delete this transaction? This action will reverse any associated balance changes.</p>
+        </div>
+      </div>
+
+      <!-- Transaction Details Snapshot -->
+      <div class="p-4 bg-slate-100/50 dark:bg-slate-900/50 rounded-2xl border border-slate-200/30 dark:border-slate-800/30 mb-6 space-y-2 text-xs">
+        <div class="flex justify-between"><span class="text-slate-400 font-medium">Type:</span><span id="delTxType" class="font-bold text-slate-700 dark:text-slate-300 uppercase">--</span></div>
+        <div class="flex justify-between"><span class="text-slate-400 font-medium">Amount:</span><span id="delTxAmount" class="font-bold text-slate-700 dark:text-slate-300">RM0.00</span></div>
+        <div class="flex justify-between"><span class="text-slate-400 font-medium">Note:</span><span id="delTxNote" class="font-bold text-slate-700 dark:text-slate-300">--</span></div>
+        <div class="flex justify-between"><span class="text-slate-400 font-medium">Date:</span><span id="delTxDate" class="font-bold text-slate-700 dark:text-slate-300">--</span></div>
+      </div>
+
+      <div class="flex gap-3 justify-end">
+        <button onclick="closeDeleteTransactionModal()" type="button" class="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 rounded-2xl text-slate-700 dark:text-slate-300 font-semibold transition-all">Cancel</button>
+        <button id="confirmDeleteTxBtn" onclick="submitDeleteTransaction()" type="button" class="px-5 py-2.5 bg-red-500 hover:bg-red-600 text-white font-bold rounded-2xl shadow-lg transition-all flex items-center gap-2">
+          <i data-lucide="trash-2" class="w-4 h-4"></i> Delete
+        </button>
       </div>
     </div>
   </div>
