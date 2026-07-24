@@ -5,9 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Allowance Manager</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <!-- Tailwind CSS Play CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
-  <!-- Lucide Icons CDN -->
   <script src="https://unpkg.com/lucide@latest"></script>
   <script>
     tailwind.config = {
@@ -16,11 +14,11 @@
         extend: {
           colors: {
             brand: {
-              yellow: '#FBBF24', // Vibrant energetic yellow
+              yellow: '#FBBF24',
               'yellow-hover': '#F59E0B',
-              dark: '#0F172A', // slate-900
-              'dark-card': '#1E293B', // slate-800
-              light: '#F8FAFC', // slate-50
+              dark: '#0F172A',
+              'dark-card': '#1E293B',
+              light: '#F8FAFC',
               'light-card': '#FFFFFF',
             }
           },
@@ -32,22 +30,10 @@
     }
   </script>
   <style>
-    /* Custom thin scrollbar and minor tweaks */
-    ::-webkit-scrollbar {
-      width: 6px;
-      height: 6px;
-    }
-    ::-webkit-scrollbar-track {
-      background: transparent;
-    }
-    ::-webkit-scrollbar-thumb {
-      background: #CBD5E1;
-      border-radius: 4px;
-    }
-    .dark ::-webkit-scrollbar-thumb {
-      background: #475569;
-    }
-    /* Smooth transitions */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #CBD5E1; border-radius: 4px; }
+    .dark ::-webkit-scrollbar-thumb { background: #475569; }
     .theme-transition {
       transition: background-color 0.3s ease, border-color 0.3s ease, text-color 0.3s ease, shadow 0.3s ease;
     }
@@ -101,9 +87,7 @@
 
       <!-- Fixed Left Sidebar -->
       <aside class="w-64 flex-shrink-0 bg-white dark:bg-brand-dark-card border-r border-slate-200 dark:border-slate-800 flex flex-col justify-between h-full z-10">
-        <!-- Sidebar Top Area -->
         <div class="p-6">
-          <!-- Stylized yellow branding header -->
           <div class="flex items-center gap-2 mb-8">
             <div class="p-2 bg-brand-yellow text-slate-950 rounded-xl font-black text-lg shadow-sm">AM</div>
             <h1 class="text-xl font-bold tracking-tight text-slate-900 dark:text-white">
@@ -111,38 +95,29 @@
             </h1>
           </div>
 
-          <!-- Vertical Navigation Tabs -->
           <nav class="space-y-1" id="navTabs">
             <button onclick="switchTab('dashboard')" id="tabBtn-dashboard" class="nav-tab w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-medium transition-all duration-150 bg-brand-yellow text-slate-950 font-semibold shadow-md">
-              <i data-lucide="layout-dashboard" class="w-5 h-5"></i>
-              Dashboard
+              <i data-lucide="layout-dashboard" class="w-5 h-5"></i> Dashboard
             </button>
             <button onclick="switchTab('transactions')" id="tabBtn-transactions" class="nav-tab w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-medium transition-all duration-150 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800">
-              <i data-lucide="arrow-left-right" class="w-5 h-5"></i>
-              Transactions
+              <i data-lucide="arrow-left-right" class="w-5 h-5"></i> Transactions
             </button>
             <button onclick="switchTab('transfers')" id="tabBtn-transfers" class="nav-tab w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-medium transition-all duration-150 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800">
-              <i data-lucide="send" class="w-5 h-5"></i>
-              Transfers
+              <i data-lucide="send" class="w-5 h-5"></i> Transfers
             </button>
             <button onclick="switchTab('analytics')" id="tabBtn-analytics" class="nav-tab w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-medium transition-all duration-150 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800">
-              <i data-lucide="pie-chart" class="w-5 h-5"></i>
-              Analytics
+              <i data-lucide="pie-chart" class="w-5 h-5"></i> Analytics
             </button>
             <button onclick="switchTab('history')" id="tabBtn-history" class="nav-tab w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-medium transition-all duration-150 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800">
-              <i data-lucide="history" class="w-5 h-5"></i>
-              History
+              <i data-lucide="history" class="w-5 h-5"></i> History
             </button>
             <button onclick="switchTab('settings')" id="tabBtn-settings" class="nav-tab w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-medium transition-all duration-150 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800">
-              <i data-lucide="settings" class="w-5 h-5"></i>
-              Settings
+              <i data-lucide="settings" class="w-5 h-5"></i> Settings
             </button>
           </nav>
         </div>
 
-        <!-- Sidebar Bottom Footer Area -->
         <div class="p-4 border-t border-slate-200 dark:border-slate-800 space-y-4">
-          <!-- Theme Appearance Switcher Toggle -->
           <div class="bg-slate-100 dark:bg-slate-900 p-1 rounded-2xl flex items-center justify-between">
             <button onclick="setTheme('light')" id="theme-light" class="flex-1 py-1.5 rounded-xl flex items-center justify-center text-slate-500 hover:text-slate-950 transition-all">
               <i data-lucide="sun" class="w-4 h-4"></i>
@@ -155,10 +130,8 @@
             </button>
           </div>
 
-          <!-- Log Out Button -->
           <button onclick="logout()" class="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-red-50 dark:bg-red-950/20 hover:bg-red-100 dark:hover:bg-red-950/40 text-red-600 dark:text-red-400 font-semibold rounded-xl text-sm transition-all duration-150">
-            <i data-lucide="log-out" class="w-4 h-4"></i>
-            Log Out
+            <i data-lucide="log-out" class="w-4 h-4"></i> Log Out
           </button>
         </div>
       </aside>
@@ -176,11 +149,9 @@
           </div>
           <div class="flex items-center gap-3">
             <button onclick="handleProcessNewMonth()" class="px-3 py-1.5 bg-slate-100 dark:bg-slate-800 hover:bg-amber-100 dark:hover:bg-amber-950/30 text-slate-800 dark:text-slate-200 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-all">
-              <i data-lucide="calendar-plus" class="w-3.5 h-3.5 text-amber-500"></i>
-              New Month
+              <i data-lucide="calendar-plus" class="w-3.5 h-3.5 text-amber-500"></i> New Month
             </button>
             <div class="h-6 w-px bg-slate-200 dark:bg-slate-800"></div>
-            <!-- Top Right Undo / Redo controls -->
             <button onclick="undo()" id="topUndoBtn" disabled class="p-2 text-slate-400 hover:text-slate-700 dark:hover:text-white disabled:opacity-30 disabled:pointer-events-none transition-all">
               <i data-lucide="undo-2" class="w-4 h-4"></i>
             </button>
@@ -197,7 +168,6 @@
           <div id="view-dashboard" class="space-y-8">
             <!-- Top Metrics Summary Cards -->
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <!-- Mama Account -->
               <div class="bg-white dark:bg-brand-dark-card rounded-3xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm relative overflow-hidden group hover:shadow-md transition-all">
                 <div class="flex items-center justify-between mb-4">
                   <span class="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Mama Account</span>
@@ -209,7 +179,6 @@
                 <p class="text-xs text-slate-400 dark:text-slate-500 mt-2">Vault holding balance</p>
               </div>
 
-              <!-- Savings Balance -->
               <div class="bg-white dark:bg-brand-dark-card rounded-3xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm relative overflow-hidden group hover:shadow-md transition-all">
                 <div class="flex items-center justify-between mb-4">
                   <span class="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Savings Balance</span>
@@ -224,7 +193,6 @@
                 </div>
               </div>
 
-              <!-- Total Remaining -->
               <div class="bg-white dark:bg-brand-dark-card rounded-3xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm relative overflow-hidden group hover:shadow-md transition-all">
                 <div class="flex items-center justify-between mb-4">
                   <span class="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Total Remaining</span>
@@ -239,39 +207,26 @@
 
             <!-- Central Content Grid -->
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-              <!-- Central vertically connected "Money Flow" node diagram -->
               <div class="lg:col-span-2 bg-white dark:bg-brand-dark-card rounded-3xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm">
                 <h3 class="text-sm font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-6 flex items-center gap-2">
-                  <i data-lucide="network" class="w-4 h-4 text-amber-500"></i>
-                  Money Flow Diagram
+                  <i data-lucide="network" class="w-4 h-4 text-amber-500"></i> Money Flow Diagram
                 </h3>
-
                 <div class="flex flex-col items-center space-y-4 py-4">
-                  <!-- Node 1: Allowance -->
                   <div class="bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900/60 rounded-2xl px-6 py-3 w-48 text-center shadow-sm">
                     <p class="text-xs font-semibold text-amber-600 dark:text-amber-400 uppercase">1. Allowance</p>
                     <p class="text-lg font-bold text-slate-900 dark:text-white">RM 430.00 / mo</p>
                   </div>
-                  <!-- Arrow Down -->
                   <div class="text-amber-500"><i data-lucide="arrow-down-to-dot" class="w-6 h-6 animate-pulse"></i></div>
-
-                  <!-- Node 2: Mama Account -->
                   <div class="bg-indigo-50 dark:bg-indigo-950/20 border border-indigo-200 dark:border-indigo-900/60 rounded-2xl px-6 py-3 w-48 text-center shadow-sm">
                     <p class="text-xs font-semibold text-indigo-600 dark:text-indigo-400 uppercase">2. Mama Account</p>
                     <p class="text-lg font-bold text-slate-900 dark:text-white" id="nodeMamaVal">RM --</p>
                   </div>
-                  <!-- Arrow Down -->
                   <div class="text-amber-500"><i data-lucide="arrow-down-to-dot" class="w-6 h-6 animate-pulse"></i></div>
-
-                  <!-- Parallel splits: Wallet and Savings -->
                   <div class="flex gap-8 justify-center w-full">
-                    <!-- Wallet Node -->
                     <div class="bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-900/60 rounded-2xl px-5 py-3 w-40 text-center shadow-sm">
                       <p class="text-xs font-semibold text-emerald-600 dark:text-emerald-400 uppercase">3a. Wallet</p>
                       <p class="text-base font-bold text-slate-900 dark:text-white" id="nodeWalletVal">RM --</p>
                     </div>
-
-                    <!-- Savings Node -->
                     <div class="bg-cyan-50 dark:bg-cyan-950/20 border border-cyan-200 dark:border-cyan-900/60 rounded-2xl px-5 py-3 w-40 text-center shadow-sm">
                       <p class="text-xs font-semibold text-cyan-600 dark:text-cyan-400 uppercase">3b. Savings</p>
                       <p class="text-base font-bold text-slate-900 dark:text-white" id="nodeSavingsVal">RM --</p>
@@ -280,32 +235,23 @@
                 </div>
               </div>
 
-              <!-- Right-hand Sidebar Panel: Bank Accounts & Monthly Insights -->
               <div class="space-y-6">
-                <!-- Bank Accounts Copy widget -->
                 <div class="bg-white dark:bg-brand-dark-card rounded-3xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm">
                   <h3 class="text-sm font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-4 flex items-center gap-2">
-                    <i data-lucide="credit-card" class="w-4 h-4 text-amber-500"></i>
-                    Bank Accounts
+                    <i data-lucide="credit-card" class="w-4 h-4 text-amber-500"></i> Bank Accounts
                   </h3>
-                  <div class="space-y-3" id="dashboardBankAccounts">
-                    <!-- Dynamic rendering -->
-                  </div>
+                  <div class="space-y-3" id="dashboardBankAccounts"></div>
                 </div>
-
-                <!-- Monthly Insights block -->
                 <div class="bg-white dark:bg-brand-dark-card rounded-3xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm relative overflow-hidden">
                   <div class="absolute -right-4 -bottom-4 text-amber-500/10 dark:text-amber-500/5">
                     <i data-lucide="clock" class="w-32 h-32"></i>
                   </div>
                   <h3 class="text-sm font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-3 flex items-center gap-2">
-                    <i data-lucide="sparkles" class="w-4 h-4 text-amber-500"></i>
-                    Monthly Insights
+                    <i data-lucide="sparkles" class="w-4 h-4 text-amber-500"></i> Monthly Insights
                   </h3>
                   <p class="text-xs text-slate-500 dark:text-slate-400 leading-relaxed mb-4">
                     Your monthly student custodian allowance is meticulously partitioned for savings, expenses, and institutional usage trackers. Keep offsets updated!
                   </p>
-                  <!-- Date and Timestamp block -->
                   <div class="p-3 bg-slate-50 dark:bg-slate-900/60 rounded-2xl border border-slate-200 dark:border-slate-800">
                     <p class="text-xs text-slate-400 dark:text-slate-500">Live tracker timestamp:</p>
                     <p class="text-sm font-semibold text-slate-800 dark:text-slate-200" id="liveTimestamp">--</p>
@@ -314,42 +260,22 @@
               </div>
             </div>
 
-            <!-- Bottom statistics grids -->
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div class="bg-white dark:bg-brand-dark-card rounded-3xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm">
                 <h3 class="text-sm font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-4">Allowance Statistics</h3>
                 <div class="overflow-x-auto">
                   <table class="w-full text-left text-xs border-collapse">
-                    <thead>
-                      <tr class="border-b border-slate-200 dark:border-slate-800 text-slate-400">
-                        <th class="py-2.5">Month</th>
-                        <th class="py-2.5">Allowance</th>
-                        <th class="py-2.5">Usage</th>
-                        <th class="py-2.5">Balance</th>
-                      </tr>
-                    </thead>
-                    <tbody id="allowanceStatsTbody">
-                      <!-- Dynamically loaded rows -->
-                    </tbody>
+                    <thead><tr class="border-b border-slate-200 dark:border-slate-800 text-slate-400"><th class="py-2.5">Month</th><th class="py-2.5">Allowance</th><th class="py-2.5">Usage</th><th class="py-2.5">Balance</th></tr></thead>
+                    <tbody id="allowanceStatsTbody"></tbody>
                   </table>
                 </div>
               </div>
-
               <div class="bg-white dark:bg-brand-dark-card rounded-3xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm">
                 <h3 class="text-sm font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-4">Savings Statistics</h3>
                 <div class="overflow-x-auto">
                   <table class="w-full text-left text-xs border-collapse">
-                    <thead>
-                      <tr class="border-b border-slate-200 dark:border-slate-800 text-slate-400">
-                        <th class="py-2.5">Month</th>
-                        <th class="py-2.5">Savings</th>
-                        <th class="py-2.5">Usage</th>
-                        <th class="py-2.5">Balance</th>
-                      </tr>
-                    </thead>
-                    <tbody id="savingsStatsTbody">
-                      <!-- Dynamically loaded rows -->
-                    </tbody>
+                    <thead><tr class="border-b border-slate-200 dark:border-slate-800 text-slate-400"><th class="py-2.5">Month</th><th class="py-2.5">Savings</th><th class="py-2.5">Usage</th><th class="py-2.5">Balance</th></tr></thead>
+                    <tbody id="savingsStatsTbody"></tbody>
                   </table>
                 </div>
               </div>
@@ -364,19 +290,14 @@
                 <p class="text-sm text-slate-500 dark:text-slate-400">Chronological vertical list of system allowance activities</p>
               </div>
               <button onclick="openAddExpenseModal()" class="px-5 py-3 bg-brand-yellow hover:bg-brand-yellow-hover text-slate-950 font-bold rounded-2xl shadow-lg transition-all flex items-center gap-2">
-                <i data-lucide="plus" class="w-5 h-5"></i>
-                Add Expense
+                <i data-lucide="plus" class="w-5 h-5"></i> Add Expense
               </button>
             </div>
-
-            <!-- Transaction list -->
             <div class="bg-white dark:bg-brand-dark-card rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
               <div class="p-6 border-b border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/20">
                 <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">All Activities</span>
               </div>
-              <div class="divide-y divide-slate-150 dark:divide-slate-800" id="activityList">
-                <!-- Dynamically populated transaction activity rows -->
-              </div>
+              <div class="divide-y divide-slate-150 dark:divide-slate-800" id="activityList"></div>
             </div>
           </div>
 
@@ -388,41 +309,24 @@
                 <p class="text-sm text-slate-500 dark:text-slate-400">Manage and request custodian fund transfers</p>
               </div>
               <button onclick="openRequestTransferModal()" class="px-5 py-3 bg-brand-yellow hover:bg-brand-yellow-hover text-slate-950 font-bold rounded-2xl shadow-lg transition-all flex items-center gap-2">
-                <i data-lucide="hand-coins" class="w-5 h-5"></i>
-                Request Transfer
+                <i data-lucide="hand-coins" class="w-5 h-5"></i> Request Transfer
               </button>
             </div>
-
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-              <!-- Main transfer history area -->
               <div class="lg:col-span-2 bg-white dark:bg-brand-dark-card rounded-3xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm">
                 <h3 class="text-sm font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-4">Transfer Activity Ledger</h3>
                 <div class="overflow-x-auto">
                   <table class="w-full text-left text-xs border-collapse">
-                    <thead>
-                      <tr class="border-b border-slate-200 dark:border-slate-800 text-slate-400">
-                        <th class="py-2.5">Date</th>
-                        <th class="py-2.5">Type</th>
-                        <th class="py-2.5">Amount</th>
-                        <th class="py-2.5">Note</th>
-                      </tr>
-                    </thead>
-                    <tbody id="transferHistoryTbody">
-                      <!-- Dynamic rows -->
-                    </tbody>
+                    <thead><tr class="border-b border-slate-200 dark:border-slate-800 text-slate-400"><th class="py-2.5">Date</th><th class="py-2.5">Type</th><th class="py-2.5">Amount</th><th class="py-2.5">Note</th></tr></thead>
+                    <tbody id="transferHistoryTbody"></tbody>
                   </table>
                 </div>
               </div>
-
-              <!-- Standard Bank Accounts sidebar reference widget -->
               <div class="bg-white dark:bg-brand-dark-card rounded-3xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm">
                 <h3 class="text-sm font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-4 flex items-center gap-2">
-                  <i data-lucide="credit-card" class="w-4 h-4 text-amber-500"></i>
-                  Bank Accounts
+                  <i data-lucide="credit-card" class="w-4 h-4 text-amber-500"></i> Bank Accounts
                 </h3>
-                <div class="space-y-3" id="transferBankAccounts">
-                  <!-- Dynamic copy banks -->
-                </div>
+                <div class="space-y-3" id="transferBankAccounts"></div>
               </div>
             </div>
           </div>
@@ -433,70 +337,34 @@
               <h2 class="text-2xl font-bold text-slate-900 dark:text-white">Spending Analytics</h2>
               <p class="text-sm text-slate-500 dark:text-slate-400">Graphical analysis of wallet distributions and monthly records</p>
             </div>
-
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-              <!-- Expenses by Category -->
               <div class="bg-white dark:bg-brand-dark-card rounded-3xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm">
                 <h3 class="text-sm font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-6">Expenses by Category</h3>
-                <!-- Simple bar representation with legend -->
                 <div class="space-y-4">
                   <div>
-                    <div class="flex justify-between text-xs mb-1">
-                      <span class="font-medium text-slate-600 dark:text-slate-300">Refill & Usage</span>
-                      <span class="font-bold text-slate-900 dark:text-white" id="catRefillPercent">0%</span>
-                    </div>
-                    <div class="h-2 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
-                      <div class="h-full bg-brand-yellow rounded-full transition-all duration-500" id="catRefillBar" style="width: 0%"></div>
-                    </div>
+                    <div class="flex justify-between text-xs mb-1"><span class="font-medium text-slate-600 dark:text-slate-300">Refill & Usage</span><span class="font-bold text-slate-900 dark:text-white" id="catRefillPercent">0%</span></div>
+                    <div class="h-2 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden"><div class="h-full bg-brand-yellow rounded-full transition-all duration-500" id="catRefillBar" style="width: 0%"></div></div>
                   </div>
                   <div>
-                    <div class="flex justify-between text-xs mb-1">
-                      <span class="font-medium text-slate-600 dark:text-slate-300">Savings & Top-ups</span>
-                      <span class="font-bold text-slate-900 dark:text-white" id="catSavingsPercent">0%</span>
-                    </div>
-                    <div class="h-2 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
-                      <div class="h-full bg-emerald-500 rounded-full transition-all duration-500" id="catSavingsBar" style="width: 0%"></div>
-                    </div>
+                    <div class="flex justify-between text-xs mb-1"><span class="font-medium text-slate-600 dark:text-slate-300">Savings & Top-ups</span><span class="font-bold text-slate-900 dark:text-white" id="catSavingsPercent">0%</span></div>
+                    <div class="h-2 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden"><div class="h-full bg-emerald-500 rounded-full transition-all duration-500" id="catSavingsBar" style="width: 0%"></div></div>
                   </div>
                   <div>
-                    <div class="flex justify-between text-xs mb-1">
-                      <span class="font-medium text-slate-600 dark:text-slate-300">Income Allocations</span>
-                      <span class="font-bold text-slate-900 dark:text-white" id="catIncomePercent">0%</span>
-                    </div>
-                    <div class="h-2 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
-                      <div class="h-full bg-blue-500 rounded-full transition-all duration-500" id="catIncomeBar" style="width: 0%"></div>
-                    </div>
+                    <div class="flex justify-between text-xs mb-1"><span class="font-medium text-slate-600 dark:text-slate-300">Income Allocations</span><span class="font-bold text-slate-900 dark:text-white" id="catIncomePercent">0%</span></div>
+                    <div class="h-2 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden"><div class="h-full bg-blue-500 rounded-full transition-all duration-500" id="catIncomeBar" style="width: 0%"></div></div>
                   </div>
                 </div>
               </div>
-
-              <!-- Weekly Spending Chart container with minimalist axes -->
               <div class="bg-white dark:bg-brand-dark-card rounded-3xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm col-span-1 lg:col-span-2">
                 <h3 class="text-sm font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-6">Weekly & Daily Spending</h3>
-                <!-- Custom minimal diagram axes -->
                 <div class="h-48 border-l-2 border-b-2 border-slate-200 dark:border-slate-700 relative flex items-end justify-around px-4 pb-2">
-                  <!-- Axis markers -->
                   <div class="absolute left-1 top-2 text-[10px] text-slate-400 font-mono">RM 500</div>
                   <div class="absolute left-1 top-24 text-[10px] text-slate-400 font-mono">RM 250</div>
                   <div class="absolute left-1 bottom-1 text-[10px] text-slate-400 font-mono">RM 0</div>
-
-                  <!-- Bar representations representing random mock visual indicators of allowance usage -->
-                  <div class="flex flex-col items-center w-12 group">
-                    <div class="bg-amber-400 hover:bg-amber-500 rounded-t-md transition-all duration-500 w-8" style="height: 120px;"></div>
-                    <span class="text-[10px] text-slate-400 mt-2">Week 1</span>
-                  </div>
-                  <div class="flex flex-col items-center w-12 group">
-                    <div class="bg-amber-400 hover:bg-amber-500 rounded-t-md transition-all duration-500 w-8" style="height: 60px;"></div>
-                    <span class="text-[10px] text-slate-400 mt-2">Week 2</span>
-                  </div>
-                  <div class="flex flex-col items-center w-12 group">
-                    <div class="bg-amber-400 hover:bg-amber-500 rounded-t-md transition-all duration-500 w-8" style="height: 80px;"></div>
-                    <span class="text-[10px] text-slate-400 mt-2">Week 3</span>
-                  </div>
-                  <div class="flex flex-col items-center w-12 group">
-                    <div class="bg-amber-400 hover:bg-amber-500 rounded-t-md transition-all duration-500 w-8" style="height: 40px;"></div>
-                    <span class="text-[10px] text-slate-400 mt-2">Week 4</span>
-                  </div>
+                  <div class="flex flex-col items-center w-12 group"><div class="bg-amber-400 hover:bg-amber-500 rounded-t-md transition-all duration-500 w-8" style="height: 120px;"></div><span class="text-[10px] text-slate-400 mt-2">Week 1</span></div>
+                  <div class="flex flex-col items-center w-12 group"><div class="bg-amber-400 hover:bg-amber-500 rounded-t-md transition-all duration-500 w-8" style="height: 60px;"></div><span class="text-[10px] text-slate-400 mt-2">Week 2</span></div>
+                  <div class="flex flex-col items-center w-12 group"><div class="bg-amber-400 hover:bg-amber-500 rounded-t-md transition-all duration-500 w-8" style="height: 80px;"></div><span class="text-[10px] text-slate-400 mt-2">Week 3</span></div>
+                  <div class="flex flex-col items-center w-12 group"><div class="bg-amber-400 hover:bg-amber-500 rounded-t-md transition-all duration-500 w-8" style="height: 40px;"></div><span class="text-[10px] text-slate-400 mt-2">Week 4</span></div>
                 </div>
               </div>
             </div>
@@ -510,11 +378,7 @@
                 <p class="text-sm text-slate-500 dark:text-slate-400">Permanent ledger of system events and balance adjustments</p>
               </div>
             </div>
-
-            <!-- Permanent history ledger presented in stacked cards with category badges -->
-            <div class="space-y-4" id="historyLedgerList">
-              <!-- Dynamically populated card rows -->
-            </div>
+            <div class="space-y-4" id="historyLedgerList"></div>
           </div>
 
           <!-- TAB 6: Settings -->
@@ -523,15 +387,11 @@
               <h2 class="text-2xl font-bold text-slate-900 dark:text-white">Settings & Manual Adjustment</h2>
               <p class="text-sm text-slate-500 dark:text-slate-400">Instantly update wallet offsets and savings manually</p>
             </div>
-
             <div class="max-w-xl bg-white dark:bg-brand-dark-card rounded-3xl p-8 border border-slate-200 dark:border-slate-800 shadow-sm space-y-6">
               <div>
                 <h3 class="text-base font-bold text-slate-900 dark:text-white mb-2">Configure Manual Balance Offsets (RM)</h3>
-                <p class="text-xs text-slate-400 dark:text-slate-500">
-                  These numeric adjustments will be automatically added to the Google Spreadsheet formulas.
-                </p>
+                <p class="text-xs text-slate-400 dark:text-slate-500">These numeric adjustments will be automatically added to the Google Spreadsheet formulas.</p>
               </div>
-
               <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
                 <div>
                   <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">Current Wallet Balance Offset (RM)</label>
@@ -542,121 +402,77 @@
                   <input type="number" id="settingSavingsOffset" step="0.01" class="w-full px-4 py-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl focus:ring-2 focus:ring-brand-yellow focus:border-brand-yellow outline-none text-slate-900 dark:text-white">
                 </div>
               </div>
-
               <button onclick="saveSettings()" class="px-6 py-3 bg-brand-yellow hover:bg-brand-yellow-hover text-slate-950 font-bold rounded-2xl shadow-lg transition-all flex items-center gap-2">
-                <i data-lucide="save" class="w-5 h-5"></i>
-                Save Changes
+                <i data-lucide="save" class="w-5 h-5"></i> Save Changes
               </button>
             </div>
           </div>
 
         </div>
       </main>
-
     </div>
   </div>
 
   <!-- MODALS -->
-
-  <!-- Modal 1: Add Expense / Transaction Modal -->
   <div id="addExpenseModal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm hidden">
     <div class="bg-white dark:bg-brand-dark-card w-full max-w-md mx-4 p-6 rounded-3xl border border-slate-200 dark:border-slate-700 shadow-2xl relative">
       <h3 class="text-lg font-bold text-slate-900 dark:text-white mb-2">Add New Expense</h3>
-      <p class="text-xs text-slate-500 dark:text-slate-400 mb-4">Add a new financial event/refill to the transactions ledger.</p>
-
-      <form id="addExpenseForm" onsubmit="event.preventDefault(); submitAddExpense();" class="space-y-4">
-        <div>
-          <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase mb-2">Transaction Type</label>
-          <select id="expenseType" class="w-full px-4 py-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl outline-none text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-yellow">
-            <option value="refill">Refill (Usage Withdrawal)</option>
-            <option value="income">Income (Allowance Deposit)</option>
-            <option value="savings">Savings Allocation</option>
-          </select>
-        </div>
-        <div>
-          <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase mb-2">Amount (RM)</label>
-          <input type="number" id="expenseAmount" step="0.01" required placeholder="0.00" class="w-full px-4 py-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl focus:ring-2 focus:ring-brand-yellow focus:border-brand-yellow outline-none text-slate-900 dark:text-white">
-        </div>
-        <div>
-          <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase mb-2">Note / Description</label>
-          <input type="text" id="expenseNote" required placeholder="e.g. Bought dynamic statistics notebook" class="w-full px-4 py-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl focus:ring-2 focus:ring-brand-yellow focus:border-brand-yellow outline-none text-slate-900 dark:text-white">
-        </div>
-
-        <div class="flex gap-3 pt-2">
-          <button type="button" onclick="closeAddExpenseModal()" class="flex-1 py-3 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-semibold rounded-2xl transition-all">Cancel</button>
-          <button type="submit" class="flex-1 py-3 bg-brand-yellow hover:bg-brand-yellow-hover text-slate-950 font-bold rounded-2xl shadow-md transition-all">Submit Expense</button>
+      <form onsubmit="event.preventDefault(); submitAddExpense();" class="space-y-4">
+        <select id="expenseType" class="w-full px-4 py-3 bg-slate-50 dark:bg-slate-900 border rounded-2xl">
+          <option value="refill">Refill</option>
+          <option value="income">Income</option>
+          <option value="savings">Savings</option>
+        </select>
+        <input type="number" id="expenseAmount" step="0.01" required placeholder="0.00" class="w-full px-4 py-3 bg-slate-50 dark:bg-slate-900 border rounded-2xl">
+        <input type="text" id="expenseNote" required placeholder="Note" class="w-full px-4 py-3 bg-slate-50 dark:bg-slate-900 border rounded-2xl">
+        <div class="flex gap-3">
+          <button type="button" onclick="closeAddExpenseModal()" class="flex-1 py-3 bg-slate-100 dark:bg-slate-800 rounded-2xl">Cancel</button>
+          <button type="submit" class="flex-1 py-3 bg-brand-yellow rounded-2xl font-bold">Submit</button>
         </div>
       </form>
     </div>
   </div>
 
-  <!-- Modal 2: Request Transfer Modal -->
   <div id="requestTransferModal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm hidden">
-    <div class="bg-white dark:bg-brand-dark-card w-full max-w-md mx-4 p-6 rounded-3xl border border-slate-200 dark:border-slate-700 shadow-2xl relative">
-      <h3 class="text-lg font-bold text-slate-900 dark:text-white mb-2">Request Custodian Transfer</h3>
-      <p class="text-xs text-slate-500 dark:text-slate-400 mb-4">Request a money transfer from your mother. This deducts from the vault.</p>
-
-      <form id="requestTransferForm" onsubmit="event.preventDefault(); submitRequestTransfer();" class="space-y-4">
-        <div>
-          <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase mb-2">Request Amount (RM)</label>
-          <input type="number" id="transferAmount" step="0.01" required placeholder="0.00" class="w-full px-4 py-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl focus:ring-2 focus:ring-brand-yellow focus:border-brand-yellow outline-none text-slate-900 dark:text-white">
-        </div>
-
-        <div class="flex gap-3 pt-2">
-          <button type="button" onclick="closeRequestTransferModal()" class="flex-1 py-3 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-semibold rounded-2xl transition-all">Cancel</button>
-          <button type="submit" class="flex-1 py-3 bg-brand-yellow hover:bg-brand-yellow-hover text-slate-950 font-bold rounded-2xl shadow-md transition-all">Submit Request</button>
+    <div class="bg-white dark:bg-brand-dark-card w-full max-w-md mx-4 p-6 rounded-3xl border shadow-2xl">
+      <h3 class="text-lg font-bold mb-2">Request Custodian Transfer</h3>
+      <form onsubmit="event.preventDefault(); submitRequestTransfer();" class="space-y-4">
+        <input type="number" id="transferAmount" step="0.01" required placeholder="0.00" class="w-full px-4 py-3 bg-slate-50 dark:bg-slate-900 border rounded-2xl">
+        <div class="flex gap-3">
+          <button type="button" onclick="closeRequestTransferModal()" class="flex-1 py-3 bg-slate-100 rounded-2xl">Cancel</button>
+          <button type="submit" class="flex-1 py-3 bg-brand-yellow rounded-2xl font-bold">Submit</button>
         </div>
       </form>
     </div>
   </div>
 
-  <!-- Modal 3: Use Savings Modal -->
   <div id="useSavingsModal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm hidden">
-    <div class="bg-white dark:bg-brand-dark-card w-full max-w-md mx-4 p-6 rounded-3xl border border-slate-200 dark:border-slate-700 shadow-2xl relative">
-      <h3 class="text-lg font-bold text-slate-900 dark:text-white mb-2">Withdraw / Use Savings</h3>
-      <p class="text-xs text-slate-500 dark:text-slate-400 mb-4">Deduct funds from active savings balance.</p>
-
-      <form id="useSavingsForm" onsubmit="event.preventDefault(); submitUseSavings();" class="space-y-4">
-        <div>
-          <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase mb-2">Withdraw Amount (RM)</label>
-          <input type="number" id="savingsWithdrawAmount" step="0.01" required placeholder="0.00" class="w-full px-4 py-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl focus:ring-2 focus:ring-brand-yellow focus:border-brand-yellow outline-none text-slate-900 dark:text-white">
-        </div>
-
-        <div class="flex gap-3 pt-2">
-          <button type="button" onclick="closeUseSavingsModal()" class="flex-1 py-3 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-semibold rounded-2xl transition-all">Cancel</button>
-          <button type="submit" class="flex-1 py-3 bg-brand-yellow hover:bg-brand-yellow-hover text-slate-950 font-bold rounded-2xl shadow-md transition-all">Withdraw</button>
+    <div class="bg-white dark:bg-brand-dark-card w-full max-w-md mx-4 p-6 rounded-3xl border shadow-2xl">
+      <h3 class="text-lg font-bold mb-2">Withdraw / Use Savings</h3>
+      <form onsubmit="event.preventDefault(); submitUseSavings();" class="space-y-4">
+        <input type="number" id="savingsWithdrawAmount" step="0.01" required placeholder="0.00" class="w-full px-4 py-3 bg-slate-50 dark:bg-slate-900 border rounded-2xl">
+        <div class="flex gap-3">
+          <button type="button" onclick="closeUseSavingsModal()" class="flex-1 py-3 bg-slate-100 rounded-2xl">Cancel</button>
+          <button type="submit" class="flex-1 py-3 bg-brand-yellow rounded-2xl font-bold">Withdraw</button>
         </div>
       </form>
     </div>
   </div>
 
-  <!-- Modal 4: Top Up Savings Modal -->
   <div id="topUpSavingsModal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm hidden">
-    <div class="bg-white dark:bg-brand-dark-card w-full max-w-md mx-4 p-6 rounded-3xl border border-slate-200 dark:border-slate-700 shadow-2xl relative">
-      <h3 class="text-lg font-bold text-slate-900 dark:text-white mb-2">Top Up Savings</h3>
-      <p class="text-xs text-slate-500 dark:text-slate-400 mb-4">Restore or top up savings for a target month.</p>
-
-      <form id="topUpSavingsForm" onsubmit="event.preventDefault(); submitTopUpSavings();" class="space-y-4">
-        <div>
-          <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase mb-2">Target Month</label>
-          <select id="topUpMonthSelect" class="w-full px-4 py-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl outline-none text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-yellow">
-            <!-- Dynamically populated options -->
-          </select>
-        </div>
-        <div>
-          <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase mb-2">Top Up Amount (RM)</label>
-          <input type="number" id="savingsTopUpAmount" step="0.01" required placeholder="0.00" class="w-full px-4 py-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl focus:ring-2 focus:ring-brand-yellow focus:border-brand-yellow outline-none text-slate-900 dark:text-white">
-        </div>
-
-        <div class="flex gap-3 pt-2">
-          <button type="button" onclick="closeTopUpSavingsModal()" class="flex-1 py-3 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-semibold rounded-2xl transition-all">Cancel</button>
-          <button type="submit" class="flex-1 py-3 bg-brand-yellow hover:bg-brand-yellow-hover text-slate-950 font-bold rounded-2xl shadow-md transition-all">Submit Top Up</button>
+    <div class="bg-white dark:bg-brand-dark-card w-full max-w-md mx-4 p-6 rounded-3xl border shadow-2xl">
+      <h3 class="text-lg font-bold mb-2">Top Up Savings</h3>
+      <form onsubmit="event.preventDefault(); submitTopUpSavings();" class="space-y-4">
+        <select id="topUpMonthSelect" class="w-full px-4 py-3 bg-slate-50 dark:bg-slate-900 border rounded-2xl"></select>
+        <input type="number" id="savingsTopUpAmount" step="0.01" required placeholder="0.00" class="w-full px-4 py-3 bg-slate-50 dark:bg-slate-900 border rounded-2xl">
+        <div class="flex gap-3">
+          <button type="button" onclick="closeTopUpSavingsModal()" class="flex-1 py-3 bg-slate-100 rounded-2xl">Cancel</button>
+          <button type="submit" class="flex-1 py-3 bg-brand-yellow rounded-2xl font-bold">Submit</button>
         </div>
       </form>
     </div>
   </div>
 
-  <!-- SCRIPT LOGIC -->
   <script>
     const API = '/api';
     let token = null;
@@ -666,47 +482,7 @@
     let undoStack = [];
     let redoStack = [];
 
-    // ----- Bank Accounts Reference List -----
-    const BANK_ACCOUNTS_MOCK = [
-      { name: "Maybank", label: "Aieryl's Maybank", number: "153056659975" },
-      { name: "Bank Rakyat", label: "Aieryl's Bank Rakyat", number: "2252698058" },
-      { name: "Bank Rakyat Mama", label: "Mama's Bank Rakyat", number: "2212319157" }
-    ];
-
-    // ----- Offline / Google Sheets Fallback Demo Mode Data -----
-    let localDB = {
-      offsets: { wallet: 0, savings: 0 },
-      transactions: [
-        { Date: new Date().toISOString(), Type: 'income', Amount: 300, Note: 'Custodian Allocation Deposit', ID: 'tx-initial-1' },
-        { Date: new Date().toISOString(), Type: 'savings', Amount: 30, Note: 'Monthly Student Savings', ID: 'tx-initial-2' }
-      ],
-      allowanceStats: [
-        { month: 'January 2026', dateReceived: '01/01/2026', allowance: 430, usage: 100, savings: 30, balance: 300 },
-        { month: 'February 2026', dateReceived: '01/02/2026', allowance: 430, usage: 150, savings: 30, balance: 250 }
-      ],
-      savingsStats: [
-        { month: 'January 2026', savings: 30, usage: 10, balance: 20 },
-        { month: 'February 2026', savings: 30, usage: 0, balance: 30 }
-      ],
-      history: [
-        { ID: 'h-1', Type: 'processNewMonth', Details: JSON.stringify({ month: 'February 2026' }), Timestamp: new Date().toISOString(), Undone: false }
-      ]
-    };
-
-    // Load Local DB if cached
-    if (localStorage.getItem('allowance_local_db')) {
-      try {
-        localDB = JSON.parse(localStorage.getItem('allowance_local_db'));
-      } catch (e) {
-        console.error("Local storage corruption, resetting demo data", e);
-      }
-    }
-
-    function saveLocalDB() {
-      localStorage.setItem('allowance_local_db', JSON.stringify(localDB));
-    }
-
-    // ----- Login Handler -----
+    // ----- Login -----
     async function login() {
       const u = document.getElementById('username').value;
       const p = document.getElementById('password').value;
@@ -726,14 +502,10 @@
           token = d.token;
           initApp();
         } else {
-          alert('Invalid admin credentials. Entering Local/Offline Fallback Mode.');
-          token = 'fallback-token';
-          initApp();
+          alert('Invalid admin credentials.');
         }
       } catch (err) {
-        console.warn("Network / API failure. Entering Offline Fallback Mode.", err);
-        token = 'fallback-token';
-        initApp();
+        alert('Cannot connect to server. Check your internet connection.');
       } finally {
         loginBtn.disabled = false;
         loginBtn.innerHTML = `<i data-lucide="log-in" class="w-5 h-5"></i> Log In`;
@@ -755,737 +527,220 @@
       document.getElementById('loginScreen').classList.remove('hidden');
     }
 
-    // ----- Switching tabs -----
     function switchTab(tabId) {
-      // Hide all tabs
       const views = ['dashboard', 'transactions', 'transfers', 'analytics', 'history', 'settings'];
       views.forEach(v => {
         document.getElementById(`view-${v}`).classList.add('hidden');
         const btn = document.getElementById(`tabBtn-${v}`);
-        if (btn) {
-          btn.className = "nav-tab w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-medium transition-all duration-150 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800";
-        }
+        if (btn) btn.className = "nav-tab w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-medium transition-all duration-150 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800";
       });
-
-      // Show target tab
       document.getElementById(`view-${tabId}`).classList.remove('hidden');
       const activeBtn = document.getElementById(`tabBtn-${tabId}`);
-      if (activeBtn) {
-        activeBtn.className = "nav-tab w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-semibold transition-all duration-150 bg-brand-yellow text-slate-950 shadow-md";
-      }
-
-      // Re-render specifically if needed
-      if (tabId === 'history') {
-        renderHistoryPage();
-      } else if (tabId === 'transactions') {
-        renderTransactionsPage();
-      } else if (tabId === 'transfers') {
-        renderTransfersPage();
-      } else if (tabId === 'analytics') {
-        renderAnalyticsPage();
-      }
+      if (activeBtn) activeBtn.className = "nav-tab w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-semibold transition-all duration-150 bg-brand-yellow text-slate-950 shadow-md";
+      if (tabId === 'history') renderHistoryPage();
+      else if (tabId === 'transactions') renderTransactionsPage();
+      else if (tabId === 'transfers') renderTransfersPage();
+      else if (tabId === 'analytics') renderAnalyticsPage();
     }
 
-    // ----- Clipboard Utility -----
     function copyToClipboard(text, elementId) {
       navigator.clipboard.writeText(text).then(() => {
-        const triggerBtn = document.getElementById(elementId);
-        if (triggerBtn) {
-          const origHTML = triggerBtn.innerHTML;
-          triggerBtn.innerHTML = `<i data-lucide="check" class="w-4 h-4 text-emerald-500"></i>`;
-          lucide.createIcons();
-          setTimeout(() => {
-            triggerBtn.innerHTML = origHTML;
-            lucide.createIcons();
-          }, 1500);
-        }
-      }).catch(err => {
-        alert("Clipboard copy failed: " + err);
+        const btn = document.getElementById(elementId);
+        if (btn) { const orig = btn.innerHTML; btn.innerHTML = `<i data-lucide="check" class="w-4 h-4 text-emerald-500"></i>`; lucide.createIcons(); setTimeout(() => { btn.innerHTML = orig; lucide.createIcons(); }, 1500); }
       });
     }
 
-    // ----- Live Date / Timestamp Tracker -----
     function startLiveTracking() {
-      const liveTracker = () => {
-        const d = new Date();
-        document.getElementById('liveTimestamp').textContent = d.toLocaleString('en-GB', { hour12: false });
-      };
-      liveTracker();
-      setInterval(liveTracker, 1000);
+      const liveTracker = () => { document.getElementById('liveTimestamp').textContent = new Date().toLocaleString('en-GB', { hour12: false }); };
+      liveTracker(); setInterval(liveTracker, 1000);
     }
 
-    // ----- Theme Switcher -----
     function setTheme(mode) {
-      // Reset active icons / button visuals
-      const lightBtn = document.getElementById('theme-light');
-      const darkBtn = document.getElementById('theme-dark');
-      const systemBtn = document.getElementById('theme-system');
-
-      lightBtn.className = "flex-1 py-1.5 rounded-xl flex items-center justify-center text-slate-500 hover:text-slate-950 transition-all";
-      darkBtn.className = "flex-1 py-1.5 rounded-xl flex items-center justify-center text-slate-500 hover:text-slate-950 transition-all";
-      systemBtn.className = "flex-1 py-1.5 rounded-xl flex items-center justify-center text-slate-500 hover:text-slate-950 transition-all";
-
-      if (mode === 'light') {
-        document.documentElement.classList.remove('dark');
-        lightBtn.classList.add('bg-white', 'text-amber-500', 'shadow-sm');
-        localStorage.setItem('theme', 'light');
-      } else if (mode === 'dark') {
-        document.documentElement.classList.add('dark');
-        darkBtn.classList.add('bg-slate-800', 'text-amber-500', 'shadow-sm');
-        localStorage.setItem('theme', 'dark');
-      } else {
-        localStorage.removeItem('theme');
-        systemBtn.classList.add('bg-white', 'dark:bg-slate-800', 'text-amber-500', 'shadow-sm');
-        if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
-          document.documentElement.classList.add('dark');
-        } else {
-          document.documentElement.classList.remove('dark');
-        }
-      }
+      const light = document.getElementById('theme-light'), dark = document.getElementById('theme-dark'), sys = document.getElementById('theme-system');
+      light.className = "flex-1 py-1.5 rounded-xl flex items-center justify-center text-slate-500 hover:text-slate-950 transition-all";
+      dark.className = "flex-1 py-1.5 rounded-xl flex items-center justify-center text-slate-500 hover:text-slate-950 transition-all";
+      sys.className = "flex-1 py-1.5 rounded-xl flex items-center justify-center text-slate-500 hover:text-slate-950 transition-all";
+      if (mode === 'light') { document.documentElement.classList.remove('dark'); light.classList.add('bg-white','text-amber-500','shadow-sm'); localStorage.setItem('theme','light'); }
+      else if (mode === 'dark') { document.documentElement.classList.add('dark'); dark.classList.add('bg-slate-800','text-amber-500','shadow-sm'); localStorage.setItem('theme','dark'); }
+      else { localStorage.removeItem('theme'); sys.classList.add('bg-white','dark:bg-slate-800','text-amber-500','shadow-sm'); document.documentElement.classList.toggle('dark', window.matchMedia('(prefers-color-scheme: dark)').matches); }
     }
+    (localStorage.getItem('theme') ? setTheme(localStorage.getItem('theme')) : setTheme('system'));
 
-    // Load initial theme choice
-    const savedTheme = localStorage.getItem('theme');
-    if (savedTheme) {
-      setTheme(savedTheme);
-    } else {
-      setTheme('system');
-    }
-
-    // ----- Data Load/Fetch -----
     async function loadAllAppData() {
-      if (token === 'fallback-token') {
-        // Fallback calculations using localDB
-        calculateFallbackDashboard();
-        return;
-      }
-
       try {
-        const dashRes = await fetch(`${API}?action=getDashboard`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ token })
-        });
+        const [dashRes, txRes, histRes] = await Promise.all([
+          fetch(`${API}?action=getDashboard`, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({token})}),
+          fetch(`${API}?action=getTransactions`, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({token})}),
+          fetch(`${API}?action=getHistory`, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({token})})
+        ]);
         dashboardData = await dashRes.json();
-
-        const txRes = await fetch(`${API}?action=getTransactions`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ token })
-        });
         transactionData = await txRes.json();
-
-        const histRes = await fetch(`${API}?action=getHistory`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ token })
-        });
         historyData = await histRes.json();
-
-        // Update Undo/Redo lists
-        historyData.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+        historyData.sort((a,b) => new Date(a.timestamp) - new Date(b.timestamp));
         undoStack = historyData.filter(h => !h.undone);
         redoStack = historyData.filter(h => h.undone);
-
         renderDashboard();
+        console.log('✅ Data loaded from Google Sheets');
       } catch (err) {
-        console.error("API error, dropping back to demo localDB calculations", err);
-        calculateFallbackDashboard();
+        console.error('❌ API Error:', err);
+        alert('Error loading data from Google Sheets. Check your Vercel environment variables.');
       }
     }
 
-    // ----- FALLBACK DEMO CALCULATIONS -----
-    function calculateFallbackDashboard() {
-      // Manual sums
-      let walletSum = 0;
-      let savingsSum = 0;
-      localDB.transactions.forEach(t => {
-        if (t.Type === 'income') {
-          walletSum += Number(t.Amount);
-        } else if (t.Type === 'refill') {
-          walletSum -= Number(t.Amount);
-        } else if (t.Type === 'savings') {
-          savingsSum += Number(t.Amount);
-        } else if (t.Type === 'savings_usage') {
-          savingsSum -= Number(t.Amount);
-        } else if (t.Type === 'savings_topup') {
-          savingsSum += Number(t.Amount);
-        }
-      });
-
-      const mamaAccount = walletSum + localDB.offsets.wallet;
-      const savingsBalance = savingsSum + localDB.offsets.savings;
-      const totalRemaining = mamaAccount + savingsBalance;
-
-      dashboardData = {
-        mamaAccount,
-        savingsBalance,
-        totalRemaining,
-        offsets: localDB.offsets,
-        allowanceStats: localDB.allowanceStats,
-        savingsStats: localDB.savingsStats,
-        monthlyTransfers: localDB.transactions.filter(t => t.Type === 'refill').map(t => ({ month: new Date(t.Date).toLocaleString('default', { month: 'short', year: 'numeric' }), amount: Number(t.Amount) })),
-        bankAccounts: BANK_ACCOUNTS_MOCK
-      };
-
-      transactionData = localDB.transactions.map(t => ({
-        date: t.Date,
-        type: t.Type,
-        amount: Number(t.Amount),
-        note: t.Note,
-        id: t.ID
-      }));
-
-      historyData = localDB.history.map(h => ({
-        id: h.ID,
-        type: h.Type,
-        details: JSON.parse(h.Details),
-        timestamp: h.Timestamp,
-        undone: h.Undone
-      }));
-
-      undoStack = historyData.filter(h => !h.undone);
-      redoStack = historyData.filter(h => h.undone);
-
-      renderDashboard();
-    }
-
-    // ----- Dashboard Rendering -----
     function renderDashboard() {
       if (!dashboardData) return;
-
-      // Update Top card sums
       document.getElementById('mamaBalance').textContent = `RM ${dashboardData.mamaAccount.toFixed(2)}`;
       document.getElementById('savingsBalance').textContent = `RM ${dashboardData.savingsBalance.toFixed(2)}`;
       document.getElementById('totalRemaining').textContent = `RM ${dashboardData.totalRemaining.toFixed(2)}`;
-
-      // Update Diagram Nodes
       document.getElementById('nodeMamaVal').textContent = `RM ${dashboardData.mamaAccount.toFixed(2)}`;
       document.getElementById('nodeWalletVal').textContent = `RM ${dashboardData.mamaAccount.toFixed(2)}`;
       document.getElementById('nodeSavingsVal').textContent = `RM ${dashboardData.savingsBalance.toFixed(2)}`;
-
-      // Load Settings offsets placeholders
       document.getElementById('settingWalletOffset').value = dashboardData.offsets.wallet;
       document.getElementById('settingSavingsOffset').value = dashboardData.offsets.savings;
 
-      // Top-up Month Options list in modal
       const topUpSelect = document.getElementById('topUpMonthSelect');
-      topUpSelect.innerHTML = dashboardData.savingsStats.map(s =>
-        `<option value="${s.month}">${s.month} (Used: RM ${(s.usage || 0).toFixed(2)})</option>`
-      ).join('');
+      topUpSelect.innerHTML = dashboardData.savingsStats.map(s => `<option value="${s.month}">${s.month} (Used: RM ${(s.usage||0).toFixed(2)})</option>`).join('');
 
-      // Enable Undo Redo controls if available
       document.getElementById('topUndoBtn').disabled = (undoStack.length === 0);
       document.getElementById('topRedoBtn').disabled = (redoStack.length === 0);
 
-      // Render Bank Accounts widgets
-      const renderBanks = (containerId) => {
-        const cont = document.getElementById(containerId);
-        cont.innerHTML = dashboardData.bankAccounts.map((b, idx) => `
-          <div class="p-3 bg-slate-50 dark:bg-slate-900 rounded-2xl flex items-center justify-between border border-slate-100 dark:border-slate-800">
-            <div>
-              <p class="text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider">${b.name}</p>
-              <p class="text-sm font-semibold text-slate-800 dark:text-slate-200">${b.number}</p>
-            </div>
-            <button onclick="copyToClipboard('${b.number}', 'copyBank-${containerId}-${idx}')" id="copyBank-${containerId}-${idx}" class="p-2 bg-white dark:bg-slate-800 hover:bg-slate-100 rounded-xl shadow-sm text-slate-500 transition-all">
-              <i data-lucide="copy" class="w-4 h-4"></i>
-            </button>
-          </div>
-        `).join('');
+      const renderBanks = (id) => {
+        document.getElementById(id).innerHTML = dashboardData.bankAccounts.map((b,i) => `
+          <div class="p-3 bg-slate-50 dark:bg-slate-900 rounded-2xl flex items-center justify-between border">
+            <div><p class="text-[10px] text-slate-400 font-bold uppercase">${b.name}</p><p class="text-sm font-semibold">${b.number}</p></div>
+            <button onclick="copyToClipboard('${b.number}','copy-${id}-${i}')" id="copy-${id}-${i}" class="p-2 bg-white dark:bg-slate-800 rounded-xl"><i data-lucide="copy" class="w-4 h-4"></i></button>
+          </div>`).join('');
       };
       renderBanks('dashboardBankAccounts');
       renderBanks('transferBankAccounts');
 
-      // Table 1: Allowance Stats
-      const allowanceTbody = document.getElementById('allowanceStatsTbody');
-      allowanceTbody.innerHTML = dashboardData.allowanceStats.map(s => `
-        <tr class="border-b border-slate-100 dark:border-slate-800/40 text-slate-700 dark:text-slate-300">
-          <td class="py-3 font-medium">${s.month}</td>
-          <td class="py-3 font-semibold">RM ${(s.allowance || 430).toFixed(2)}</td>
-          <td class="py-3 text-red-500 font-semibold">RM ${(s.usage || 0).toFixed(2)}</td>
-          <td class="py-3 text-emerald-500 font-bold">RM ${(s.balance || 0).toFixed(2)}</td>
-        </tr>
-      `).join('');
-
-      // Table 2: Savings Stats
-      const savingsTbody = document.getElementById('savingsStatsTbody');
-      savingsTbody.innerHTML = dashboardData.savingsStats.map(s => `
-        <tr class="border-b border-slate-100 dark:border-slate-800/40 text-slate-700 dark:text-slate-300">
-          <td class="py-3 font-medium">${s.month}</td>
-          <td class="py-3 font-semibold">RM ${(s.savings || 30).toFixed(2)}</td>
-          <td class="py-3 text-red-400">RM ${(s.usage || 0).toFixed(2)}</td>
-          <td class="py-3 text-emerald-500 font-bold">RM ${(s.balance || 0).toFixed(2)}</td>
-        </tr>
-      `).join('');
-
+      document.getElementById('allowanceStatsTbody').innerHTML = dashboardData.allowanceStats.map(s => `
+        <tr class="border-b"><td class="py-3 font-medium">${s.month}</td><td class="py-3 font-semibold">RM ${(s.allowance||430).toFixed(2)}</td><td class="py-3 text-red-500 font-semibold">RM ${(s.usage||0).toFixed(2)}</td><td class="py-3 text-emerald-500 font-bold">RM ${(s.balance||0).toFixed(2)}</td></tr>`).join('');
+      document.getElementById('savingsStatsTbody').innerHTML = dashboardData.savingsStats.map(s => `
+        <tr class="border-b"><td class="py-3 font-medium">${s.month}</td><td class="py-3 font-semibold">RM ${(s.savings||30).toFixed(2)}</td><td class="py-3 text-red-400">RM ${(s.usage||0).toFixed(2)}</td><td class="py-3 text-emerald-500 font-bold">RM ${(s.balance||0).toFixed(2)}</td></tr>`).join('');
       lucide.createIcons();
     }
 
-    // ----- Transactions Tab rendering -----
     function renderTransactionsPage() {
-      const actList = document.getElementById('activityList');
-      if (transactionData.length === 0) {
-        actList.innerHTML = `<div class="p-8 text-center text-slate-400 text-sm">No transaction records recorded yet</div>`;
-        return;
-      }
-
-      // Sort newest first
-      const sortedTxs = [...transactionData].sort((a,b) => new Date(b.date) - new Date(a.date));
-
-      actList.innerHTML = sortedTxs.map(t => {
-        let icon = 'arrow-up-right';
-        let badgeColor = 'bg-emerald-50 dark:bg-emerald-950/20 text-emerald-500';
-        let amountPrefix = '+';
-        let amountColor = 'text-emerald-500';
-
-        if (t.type === 'refill' || t.type === 'savings_usage') {
-          icon = 'arrow-down-left';
-          badgeColor = 'bg-red-50 dark:bg-red-950/20 text-red-500';
-          amountPrefix = '-';
-          amountColor = 'text-red-500';
-        }
-
-        return `
-          <div class="p-4 flex items-center justify-between hover:bg-slate-50/60 dark:hover:bg-slate-900/10 transition-all">
-            <div class="flex items-center gap-4">
-              <!-- circular green arrow icons -->
-              <div class="w-10 h-10 rounded-full flex items-center justify-center ${badgeColor}">
-                <i data-lucide="${icon}" class="w-5 h-5"></i>
-              </div>
-              <div>
-                <p class="text-sm font-bold text-slate-900 dark:text-white capitalize">${t.note || t.type}</p>
-                <p class="text-xs text-slate-400 dark:text-slate-500">${new Date(t.date).toLocaleString('en-GB')}</p>
-              </div>
-            </div>
-            <!-- Bold green credit indicators / RM values -->
-            <span class="text-sm font-extrabold ${amountColor}">
-              ${amountPrefix}RM ${t.amount.toFixed(2)}
-            </span>
-          </div>
-        `;
+      const list = document.getElementById('activityList');
+      if (!transactionData.length) { list.innerHTML = '<div class="p-8 text-center text-slate-400 text-sm">No records</div>'; return; }
+      list.innerHTML = [...transactionData].sort((a,b) => new Date(b.date) - new Date(a.date)).map(t => {
+        const isOut = t.type === 'refill' || t.type === 'savings_usage';
+        return `<div class="p-4 flex items-center justify-between"><div class="flex items-center gap-4"><div class="w-10 h-10 rounded-full flex items-center justify-center ${isOut?'bg-red-50 text-red-500':'bg-emerald-50 text-emerald-500'}"><i data-lucide="${isOut?'arrow-down-left':'arrow-up-right'}" class="w-5 h-5"></i></div><div><p class="text-sm font-bold">${t.note||t.type}</p><p class="text-xs text-slate-400">${new Date(t.date).toLocaleString('en-GB')}</p></div></div><span class="text-sm font-extrabold ${isOut?'text-red-500':'text-emerald-500'}">${isOut?'-':'+'}RM ${t.amount.toFixed(2)}</span></div>`;
       }).join('');
       lucide.createIcons();
     }
 
-    // ----- Transfers Tab rendering -----
     function renderTransfersPage() {
-      const tbody = document.getElementById('transferHistoryTbody');
-      const transfersOnly = transactionData.filter(t => t.type === 'refill');
-
-      if (transfersOnly.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="4" class="py-4 text-center text-slate-400 text-xs">No requested transfers recorded</td></tr>`;
-        return;
-      }
-
-      tbody.innerHTML = transfersOnly.map(t => `
-        <tr class="border-b border-slate-150 dark:border-slate-800 text-slate-700 dark:text-slate-300">
-          <td class="py-3 font-medium">${new Date(t.date).toLocaleDateString('en-GB')}</td>
-          <td class="py-3 uppercase text-xs font-bold text-slate-500">Mama Transfer</td>
-          <td class="py-3 font-extrabold text-slate-900 dark:text-white">RM ${t.amount.toFixed(2)}</td>
-          <td class="py-3 text-xs text-slate-500">${t.note || 'Transfer Refill'}</td>
-        </tr>
-      `).join('');
+      const refills = transactionData.filter(t => t.type === 'refill');
+      document.getElementById('transferHistoryTbody').innerHTML = refills.length ? refills.map(t => `<tr class="border-b"><td class="py-3">${new Date(t.date).toLocaleDateString('en-GB')}</td><td class="py-3 uppercase text-xs font-bold">Transfer</td><td class="py-3 font-extrabold">RM ${t.amount.toFixed(2)}</td><td class="py-3 text-xs">${t.note||''}</td></tr>`).join('') : '<tr><td colspan="4" class="py-4 text-center text-xs">No transfers</td></tr>';
     }
 
-    // ----- Analytics page calculations -----
     function renderAnalyticsPage() {
-      let refillTotal = 0;
-      let savingsTotal = 0;
-      let incomeTotal = 0;
-
+      let refill=0,sav=0,inc=0;
       transactionData.forEach(t => {
-        if (t.type === 'refill' || t.type === 'savings_usage') {
-          refillTotal += Number(t.amount);
-        } else if (t.type === 'savings' || t.type === 'savings_topup') {
-          savingsTotal += Number(t.amount);
-        } else if (t.type === 'income') {
-          incomeTotal += Number(t.amount);
-        }
+        if (t.type==='refill'||t.type==='savings_usage') refill+=Number(t.amount);
+        else if (t.type==='savings'||t.type==='savings_topup') sav+=Number(t.amount);
+        else if (t.type==='income') inc+=Number(t.amount);
       });
-
-      const grandTotal = refillTotal + savingsTotal + incomeTotal || 1;
-      const refPerc = Math.round((refillTotal / grandTotal) * 100);
-      const savPerc = Math.round((savingsTotal / grandTotal) * 100);
-      const incPerc = Math.round((incomeTotal / grandTotal) * 100);
-
-      document.getElementById('catRefillPercent').textContent = `${refPerc}%`;
-      document.getElementById('catRefillBar').style.width = `${refPerc}%`;
-
-      document.getElementById('catSavingsPercent').textContent = `${savPerc}%`;
-      document.getElementById('catSavingsBar').style.width = `${savPerc}%`;
-
-      document.getElementById('catIncomePercent').textContent = `${incPerc}%`;
-      document.getElementById('catIncomeBar').style.width = `${incPerc}%`;
+      const total = refill+sav+inc||1;
+      document.getElementById('catRefillPercent').textContent=`${Math.round(refill/total*100)}%`; document.getElementById('catRefillBar').style.width=`${Math.round(refill/total*100)}%`;
+      document.getElementById('catSavingsPercent').textContent=`${Math.round(sav/total*100)}%`; document.getElementById('catSavingsBar').style.width=`${Math.round(sav/total*100)}%`;
+      document.getElementById('catIncomePercent').textContent=`${Math.round(inc/total*100)}%`; document.getElementById('catIncomeBar').style.width=`${Math.round(inc/total*100)}%`;
     }
 
-    // ----- History Tab Ledger Rendering -----
     function renderHistoryPage() {
       const list = document.getElementById('historyLedgerList');
-      if (historyData.length === 0) {
-        list.innerHTML = `<div class="p-8 text-center text-slate-400 text-sm">No action logs found.</div>`;
-        return;
-      }
-
-      // Sort newest first
-      const sortedHistory = [...historyData].sort((a,b) => new Date(b.timestamp) - new Date(a.timestamp));
-
-      list.innerHTML = sortedHistory.map(h => {
-        const detailsObj = h.details || {};
-        const isUndone = h.undone;
-
-        return `
-          <div class="bg-white dark:bg-brand-dark-card rounded-2xl p-5 border border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 transition-all hover:border-amber-200">
-            <div>
-              <div class="flex items-center gap-2 mb-2">
-                <!-- category badges -->
-                <span class="px-2.5 py-0.5 bg-slate-100 dark:bg-slate-900 text-slate-600 dark:text-slate-300 rounded-full text-[10px] font-bold uppercase tracking-wider">
-                  UPDATE BALANCES
-                </span>
-                <span class="text-[10px] text-slate-400 dark:text-slate-500">${new Date(h.timestamp).toLocaleString('en-GB')}</span>
-              </div>
-              <p class="text-sm font-bold text-slate-800 dark:text-white ${isUndone ? 'line-through text-slate-400' : ''}">
-                ${h.type.replace(/([A-Z])/g, ' $1').toUpperCase()}: Allocated / Adjusted values inside transactions vault.
-              </p>
-              <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">
-                Details: ${JSON.stringify(detailsObj)}
-              </p>
-            </div>
-            <!-- Individual Redo Button -->
-            ${isUndone ? `
-              <button onclick="redoAction('${h.id}')" class="px-3.5 py-2 bg-brand-yellow hover:bg-brand-yellow-hover text-slate-950 font-bold rounded-xl text-xs flex items-center gap-1.5 transition-all">
-                <i data-lucide="redo" class="w-3.5 h-3.5"></i>
-                Redo
-              </button>
-            ` : `
-              <button onclick="undoAction('${h.id}')" class="px-3.5 py-2 bg-red-50 dark:bg-red-950/20 hover:bg-red-100 text-red-600 dark:text-red-400 font-bold rounded-xl text-xs flex items-center gap-1.5 transition-all">
-                <i data-lucide="undo" class="w-3.5 h-3.5"></i>
-                Undo
-              </button>
-            `}
-          </div>
-        `;
-      }).join('');
+      if (!historyData.length) { list.innerHTML = '<div class="p-8 text-center text-slate-400 text-sm">No history</div>'; return; }
+      list.innerHTML = [...historyData].sort((a,b) => new Date(b.timestamp) - new Date(a.timestamp)).map(h => `
+        <div class="bg-white dark:bg-brand-dark-card rounded-2xl p-5 border flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div><span class="px-2.5 py-0.5 bg-slate-100 dark:bg-slate-900 rounded-full text-[10px] font-bold uppercase">${h.type}</span><span class="text-[10px] ml-2">${new Date(h.timestamp).toLocaleString('en-GB')}</span><p class="text-xs mt-1">${JSON.stringify(h.details)}</p></div>
+          ${h.undone ? `<button onclick="redoAction('${h.id}')" class="px-3.5 py-2 bg-brand-yellow font-bold rounded-xl text-xs">↩ Redo</button>` : `<button onclick="undoAction('${h.id}')" class="px-3.5 py-2 bg-red-50 text-red-600 font-bold rounded-xl text-xs">Undo</button>`}
+        </div>`).join('');
       lucide.createIcons();
     }
 
-    // ----- Settings Tab Balance Save Changes -----
     async function saveSettings() {
-      const walletOffset = parseFloat(document.getElementById('settingWalletOffset').value) || 0;
-      const savingsOffset = parseFloat(document.getElementById('settingSavingsOffset').value) || 0;
-
-      if (token === 'fallback-token') {
-        localDB.offsets.wallet = walletOffset;
-        localDB.offsets.savings = savingsOffset;
-
-        // Add action to fallback history
-        localDB.history.push({
-          ID: 'h-' + Math.random().toString(),
-          Type: 'setOffsets',
-          Details: JSON.stringify({ wallet: walletOffset, savings: savingsOffset, oldWallet: dashboardData.offsets.wallet, oldSavings: dashboardData.offsets.savings }),
-          Timestamp: new Date().toISOString(),
-          Undone: false
-        });
-        saveLocalDB();
-        alert('Offset levels manually saved to fallback database successfully.');
-        loadAllAppData();
-        return;
-      }
-
+      const w = parseFloat(document.getElementById('settingWalletOffset').value)||0, s = parseFloat(document.getElementById('settingSavingsOffset').value)||0;
       try {
-        const res = await fetch(`${API}?action=setOffsets`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ token, walletOffset, savingsOffset })
-        });
-        const data = await res.json();
-        if (data.success) {
-          alert('Manual offsets saved successfully.');
-          loadAllAppData();
-        } else {
-          alert('Error: ' + data.error);
-        }
-      } catch (err) {
-        alert('Error: Network or sheets connection timeout. Saving locally.');
-      }
-    }
-
-    // ----- Undo / Redo Actions -----
-    async function undo() {
-      if (undoStack.length === 0) return;
-      const action = undoStack[undoStack.length - 1];
-      await undoAction(action.id);
-    }
-
-    async function redo() {
-      if (redoStack.length === 0) return;
-      const action = redoStack[redoStack.length - 1];
-      await redoAction(action.id);
-    }
-
-    async function undoAction(actionId) {
-      if (token === 'fallback-token') {
-        const action = localDB.history.find(h => h.ID === actionId);
-        if (action) {
-          action.Undone = true;
-          // Reverse logic inside fallback if applicable, otherwise flag state
-          saveLocalDB();
-          alert('Successfully Undone Action (Demo State flag updated)');
-          loadAllAppData();
-        }
-        return;
-      }
-
-      try {
-        const res = await fetch(`${API}?action=undoAction`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ token, actionId })
-        });
-        const data = await res.json();
-        if (data.success) {
-          loadAllAppData();
-        } else {
-          alert('Undo failed: ' + data.error);
-        }
-      } catch (e) {
-        alert('Error connecting to Server API');
-      }
-    }
-
-    async function redoAction(actionId) {
-      if (token === 'fallback-token') {
-        const action = localDB.history.find(h => h.ID === actionId);
-        if (action) {
-          action.Undone = false;
-          saveLocalDB();
-          alert('Successfully Redone Action (Demo State flag updated)');
-          loadAllAppData();
-        }
-        return;
-      }
-
-      try {
-        const res = await fetch(`${API}?action=redoAction`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ token, actionId })
-        });
-        const data = await res.json();
-        if (data.success) {
-          loadAllAppData();
-        } else {
-          alert('Redo failed: ' + data.error);
-        }
-      } catch (e) {
-        alert('Error connecting to Server API');
-      }
-    }
-
-    // ----- Request New Month Trigger -----
-    async function handleProcessNewMonth() {
-      if (!confirm('Start a new student allowance tracking month? This triggers Google formulas allocation updates.')) return;
-
-      if (token === 'fallback-token') {
-        localDB.history.push({
-          ID: 'h-' + Math.random().toString(),
-          Type: 'newMonth',
-          Details: JSON.stringify({ month: 'March 2026' }),
-          Timestamp: new Date().toISOString(),
-          Undone: false
-        });
-        saveLocalDB();
-        alert('New month processed (Demo database simulation complete).');
-        loadAllAppData();
-        return;
-      }
-
-      try {
-        const res = await fetch(`${API}?action=processNewMonth`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ token })
-        });
+        const res = await fetch(`${API}?action=setOffsets`, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({token,walletOffset:w,savingsOffset:s})});
         const d = await res.json();
-        if (d.success) {
-          alert('Successfully updated sheets: ' + d.month);
-          loadAllAppData();
-        } else {
-          alert('Error: ' + d.error);
-        }
-      } catch (err) {
-        alert('Failed starting new month.');
-      }
+        if (d.success) { alert('✅ Saved'); loadAllAppData(); } else alert('❌ '+d.error);
+      } catch(e) { alert('❌ Connection error'); }
     }
 
-    // ----- Modals Toggles -----
+    async function handleProcessNewMonth() {
+      if (!confirm('Start a new allowance month?')) return;
+      try {
+        const res = await fetch(`${API}?action=processNewMonth`, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({token})});
+        const d = await res.json();
+        if (d.success) { alert('✅ '+d.month); loadAllAppData(); } else alert('❌ '+d.error);
+      } catch(e) { alert('❌ Failed'); }
+    }
+
+    async function undo() { if (undoStack.length) await undoAction(undoStack[undoStack.length-1].id); }
+    async function redo() { if (redoStack.length) await redoAction(redoStack[redoStack.length-1].id); }
+
+    async function undoAction(id) {
+      try {
+        const res = await fetch(`${API}?action=undoAction`, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({token,actionId:id})});
+        const d = await res.json();
+        if (d.success) loadAllAppData(); else alert('❌ '+d.error);
+      } catch(e) { alert('❌ Connection error'); }
+    }
+
+    async function redoAction(id) {
+      try {
+        const res = await fetch(`${API}?action=redoAction`, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({token,actionId:id})});
+        const d = await res.json();
+        if (d.success) loadAllAppData(); else alert('❌ '+d.error);
+      } catch(e) { alert('❌ Connection error'); }
+    }
+
     function openAddExpenseModal() { document.getElementById('addExpenseModal').classList.remove('hidden'); }
     function closeAddExpenseModal() { document.getElementById('addExpenseModal').classList.add('hidden'); }
-
     function openRequestTransferModal() { document.getElementById('requestTransferModal').classList.remove('hidden'); }
     function closeRequestTransferModal() { document.getElementById('requestTransferModal').classList.add('hidden'); }
-
     function openUseSavingsModal() { document.getElementById('useSavingsModal').classList.remove('hidden'); }
     function closeUseSavingsModal() { document.getElementById('useSavingsModal').classList.add('hidden'); }
-
     function openTopUpSavingsModal() { document.getElementById('topUpSavingsModal').classList.remove('hidden'); }
     function closeTopUpSavingsModal() { document.getElementById('topUpSavingsModal').classList.add('hidden'); }
 
-    // ----- Submit handlers inside modals -----
     async function submitAddExpense() {
-      const type = document.getElementById('expenseType').value;
-      const amount = parseFloat(document.getElementById('expenseAmount').value) || 0;
-      const note = document.getElementById('expenseNote').value;
-
-      if (token === 'fallback-token') {
-        const txId = 'tx-added-' + Math.random().toString();
-        localDB.transactions.push({ Date: new Date().toISOString(), Type: type, Amount: amount, Note: note, ID: txId });
-        localDB.history.push({
-          ID: 'h-add-' + Math.random().toString(),
-          Type: 'addTransaction',
-          Details: JSON.stringify({ type, amount, note, txId }),
-          Timestamp: new Date().toISOString(),
-          Undone: false
-        });
-        saveLocalDB();
-        closeAddExpenseModal();
-        alert('Expense recorded in demo fallbacks.');
-        loadAllAppData();
-        return;
-      }
-
+      const type=document.getElementById('expenseType').value, amount=parseFloat(document.getElementById('expenseAmount').value)||0, note=document.getElementById('expenseNote').value;
       try {
-        const res = await fetch(`${API}?action=addTransaction`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ token, type, amount, note })
-        });
-        const data = await res.json();
-        if (data.success) {
-          closeAddExpenseModal();
-          loadAllAppData();
-        } else {
-          alert('Add expense error: ' + data.error);
-        }
-      } catch (e) {
-        alert('Network error submitting transaction.');
-      }
+        const res = await fetch(`${API}?action=addTransaction`, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({token,type,amount,note})});
+        const d = await res.json();
+        if (d.success) { closeAddExpenseModal(); loadAllAppData(); } else alert('❌ '+d.error);
+      } catch(e) { alert('❌ Connection error'); }
     }
 
     async function submitRequestTransfer() {
-      const amount = parseFloat(document.getElementById('transferAmount').value) || 0;
-
-      if (token === 'fallback-token') {
-        const txId = 'tx-added-' + Math.random().toString();
-        localDB.transactions.push({ Date: new Date().toISOString(), Type: 'refill', Amount: amount, Note: 'Transfer Refill from Mama', ID: txId });
-        localDB.history.push({
-          ID: 'h-refill-' + Math.random().toString(),
-          Type: 'requestMoney',
-          Details: JSON.stringify({ amount, txId }),
-          Timestamp: new Date().toISOString(),
-          Undone: false
-        });
-        saveLocalDB();
-        closeRequestTransferModal();
-        alert('Transfer request recorded in demo fallbacks.');
-        loadAllAppData();
-        return;
-      }
-
+      const amount = parseFloat(document.getElementById('transferAmount').value)||0;
       try {
-        const res = await fetch(`${API}?action=requestMoney`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ token, amount })
-        });
-        const data = await res.json();
-        if (data.transactionId) {
-          closeRequestTransferModal();
-          loadAllAppData();
-        } else {
-          alert('Transfer request error: ' + data.error);
-        }
-      } catch (e) {
-        alert('Network error submitting request.');
-      }
+        const res = await fetch(`${API}?action=requestMoney`, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({token,amount})});
+        const d = await res.json();
+        if (d.transactionId) { closeRequestTransferModal(); loadAllAppData(); } else alert('❌ '+d.error);
+      } catch(e) { alert('❌ Connection error'); }
     }
 
     async function submitUseSavings() {
-      const amount = parseFloat(document.getElementById('savingsWithdrawAmount').value) || 0;
-
-      if (token === 'fallback-token') {
-        const txId = 'tx-added-' + Math.random().toString();
-        localDB.transactions.push({ Date: new Date().toISOString(), Type: 'savings_usage', Amount: amount, Note: 'Used savings', ID: txId });
-        localDB.history.push({
-          ID: 'h-savings-' + Math.random().toString(),
-          Type: 'useSavings',
-          Details: JSON.stringify({ amount, txId }),
-          Timestamp: new Date().toISOString(),
-          Undone: false
-        });
-        saveLocalDB();
-        closeUseSavingsModal();
-        alert('Savings withdrawal recorded in demo fallbacks.');
-        loadAllAppData();
-        return;
-      }
-
+      const amount = parseFloat(document.getElementById('savingsWithdrawAmount').value)||0;
       try {
-        const res = await fetch(`${API}?action=useSavings`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ token, amount })
-        });
-        const data = await res.json();
-        if (data.transactionId) {
-          closeUseSavingsModal();
-          loadAllAppData();
-        } else {
-          alert('Withdraw failed: ' + data.error);
-        }
-      } catch (e) {
-        alert('Network error withdrawing savings.');
-      }
+        const res = await fetch(`${API}?action=useSavings`, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({token,amount})});
+        const d = await res.json();
+        if (d.transactionId) { closeUseSavingsModal(); loadAllAppData(); } else alert('❌ '+d.error);
+      } catch(e) { alert('❌ Connection error'); }
     }
 
     async function submitTopUpSavings() {
-      const month = document.getElementById('topUpMonthSelect').value;
-      const amount = parseFloat(document.getElementById('savingsTopUpAmount').value) || 0;
-
-      if (token === 'fallback-token') {
-        const txId = 'tx-added-' + Math.random().toString();
-        localDB.transactions.push({ Date: new Date().toISOString(), Type: 'savings_topup', Amount: amount, Note: 'Savings top up for ' + month, ID: txId });
-        localDB.history.push({
-          ID: 'h-topup-' + Math.random().toString(),
-          Type: 'topUpSavings',
-          Details: JSON.stringify({ totalAmount: amount, months: [{ month }], txId }),
-          Timestamp: new Date().toISOString(),
-          Undone: false
-        });
-        saveLocalDB();
-        closeTopUpSavingsModal();
-        alert('Savings top up recorded in demo fallbacks.');
-        loadAllAppData();
-        return;
-      }
-
+      const month = document.getElementById('topUpMonthSelect').value, amount = parseFloat(document.getElementById('savingsTopUpAmount').value)||0;
       try {
-        const res = await fetch(`${API}?action=topUpSavings`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ token, months: [{ month }], totalAmount: amount })
-        });
-        const data = await res.json();
-        if (data.transactionId) {
-          closeTopUpSavingsModal();
-          loadAllAppData();
-        } else {
-          alert('Top up failed: ' + data.error);
-        }
-      } catch (e) {
-        alert('Network error topping up savings.');
-      }
+        const res = await fetch(`${API}?action=topUpSavings`, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({token,months:[{month}],totalAmount:amount})});
+        const d = await res.json();
+        if (d.transactionId) { closeTopUpSavingsModal(); loadAllAppData(); } else alert('❌ '+d.error);
+      } catch(e) { alert('❌ Connection error'); }
     }
-
   </script>
 </body>
 </html>
