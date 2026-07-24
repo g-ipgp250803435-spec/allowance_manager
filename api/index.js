@@ -104,7 +104,8 @@ module.exports = async (req, res) => {
       switch (action) {
         case 'getDashboard': result = await getDashboardData(doc); break;
         case 'requestMoney': result = await requestMoney(doc, body.amount); break;
-        case 'processNewMonth': result = await processNewMonth(doc, body.month, body.year); break;
+        case 'processNewMonth': result = await processNewMonth(doc, body.month, body.year, body.dateReceived); break;
+        case 'updateDateReceived': result = await updateDateReceived(doc, body.month, body.newDate); break;
         case 'useSavings': result = await useSavings(doc, body.amount, body.month); break;
         case 'topUpSavings': result = await topUpSavings(doc, body.months, body.totalAmount); break;
         case 'setOffsets': result = await setOffsets(doc, body.walletOffset, body.savingsOffset); break;
@@ -112,6 +113,7 @@ module.exports = async (req, res) => {
         case 'getHistory': result = await getHistory(doc); break;
         case 'getTransactions': result = await getTransactions(doc); break;
         case 'addTransaction': result = await addTransaction(doc, body.type, body.amount, body.note); break;
+        case 'deleteTransaction': result = await deleteTransaction(doc, body.transactionId); break;
         case 'redoAction': result = await redoAction(doc, body.actionId); break;
         case 'undoAction': result = await undoAction(doc, body.actionId); break;
         default: result = { error: 'Unknown action' };
@@ -171,6 +173,162 @@ async function addTransaction(doc, type, amount, note) {
   await sheet.addRow({ Date: dateStr, Type: type, Amount: amount, Note: note, ID: txId });
   await addHistory(doc, 'addTransaction', { type, amount, note, txId });
   return { success: true, transactionId: txId };
+}
+
+async function deleteTransaction(doc, transactionId) {
+  const txSheet = await getOrCreateSheet(doc, 'transactions', ['Date', 'Type', 'Amount', 'Note', 'ID']);
+  const rows = await txSheet.getRows();
+  const row = rows.find(r => r.ID === transactionId);
+  if (!row) {
+    throw new Error(`Transaction with ID ${transactionId} not found`);
+  }
+
+  // Backup data
+  const txBackup = {
+    id: row.ID,
+    date: row.Date,
+    type: row.Type,
+    amount: Number(row.Amount) || 0,
+    note: row.Note
+  };
+
+  // Check the history to see if there's any detailed adjustment we can reverse directly.
+  // Otherwise, we do dynamic adjustments.
+  const historySheet = await getOrCreateHistorySheet(doc);
+  const histRows = await historySheet.getRows();
+
+  // Find matching history action where details contain this txId
+  let adjustments = [];
+  let matchingHistAction = null;
+
+  for (const hRow of histRows) {
+    try {
+      const details = JSON.parse(hRow.Details);
+      if (details.txId === transactionId && hRow.Undone !== 'true' && hRow.Undone !== true) {
+        matchingHistAction = hRow;
+        adjustments = details.adjustments || [];
+        break;
+      }
+    } catch (e) {}
+  }
+
+  const resultAdjustments = [];
+
+  // Reversing adjustments depending on type
+  if (txBackup.type === 'refill' || txBackup.type === 'requestMoney') {
+    // Reversing a transfer request means we need to deduct row.Usage and increase row.Balance
+    const statsSheet = doc.sheetsByTitle['allowance_stats'];
+    if (statsSheet) {
+      const statsRows = await statsSheet.getRows();
+      if (adjustments && adjustments.length > 0) {
+        // Use matching history row's adjustments
+        for (const adj of adjustments) {
+          const statsRow = statsRows.find(r => r.rowNumber === adj.row);
+          if (statsRow) {
+            statsRow.Usage = (Number(statsRow.Usage) || 0) - adj.deducted;
+            statsRow.Balance = (Number(statsRow.Balance) || 0) + adj.deducted;
+            await statsRow.save();
+            resultAdjustments.push({ sheet: 'allowance_stats', row: adj.row, month: statsRow.Month, deducted: -adj.deducted });
+          }
+        }
+      } else {
+        // Fallback: reverse-chronological FIFO deduction from allowance_stats Usage
+        statsRows.sort((a, b) => compareMonthYear(b.Month, a.Month)); // Reverse order
+        let remaining = txBackup.amount;
+        for (const statsRow of statsRows) {
+          if (remaining <= 0) break;
+          const usage = Number(statsRow.Usage) || 0;
+          const restore = Math.min(remaining, usage);
+          if (restore > 0) {
+            statsRow.Usage = usage - restore;
+            statsRow.Balance = (Number(statsRow.Balance) || 0) + restore;
+            await statsRow.save();
+            resultAdjustments.push({ sheet: 'allowance_stats', row: statsRow.rowNumber, month: statsRow.Month, deducted: -restore });
+            remaining -= restore;
+          }
+        }
+      }
+    }
+  } else if (txBackup.type === 'savings_usage' || txBackup.type === 'useSavings') {
+    // Reversing savings usage means we deduct row.Usage and increase row.Balance in savings_stats
+    const savSheet = doc.sheetsByTitle['savings_stats'];
+    if (savSheet) {
+      const savRows = await savSheet.getRows();
+      if (adjustments && adjustments.length > 0) {
+        for (const adj of adjustments) {
+          const savRow = savRows.find(r => r.rowNumber === adj.row);
+          if (savRow) {
+            savRow.Usage = (Number(savRow.Usage) || 0) - adj.deducted;
+            savRow.Balance = (Number(savRow.Balance) || 0) + adj.deducted;
+            await savRow.save();
+            resultAdjustments.push({ sheet: 'savings_stats', row: adj.row, month: savRow.Month, deducted: -adj.deducted });
+          }
+        }
+      } else {
+        // Fallback
+        savRows.sort((a, b) => compareMonthYear(b.Month, a.Month));
+        let remaining = txBackup.amount;
+        for (const savRow of savRows) {
+          if (remaining <= 0) break;
+          const usage = Number(savRow.Usage) || 0;
+          const restore = Math.min(remaining, usage);
+          if (restore > 0) {
+            savRow.Usage = usage - restore;
+            savRow.Balance = (Number(savRow.Balance) || 0) + restore;
+            await savRow.save();
+            resultAdjustments.push({ sheet: 'savings_stats', row: savRow.rowNumber, month: savRow.Month, deducted: -restore });
+            remaining -= restore;
+          }
+        }
+      }
+    }
+  } else if (txBackup.type === 'savings_topup' || txBackup.type === 'topUpSavings') {
+    // Reversing savings topup means we add back row.Usage and deduct row.Balance in savings_stats
+    const savSheet = doc.sheetsByTitle['savings_stats'];
+    if (savSheet) {
+      const savRows = await savSheet.getRows();
+      if (adjustments && adjustments.length > 0) {
+        for (const adj of adjustments) {
+          const savRow = savRows.find(r => r.rowNumber === adj.row);
+          if (savRow) {
+            savRow.Usage = (Number(savRow.Usage) || 0) + adj.restored;
+            savRow.Balance = (Number(savRow.Balance) || 0) - adj.restored;
+            await savRow.save();
+            resultAdjustments.push({ sheet: 'savings_stats', row: adj.row, month: savRow.Month, restored: -adj.restored });
+          }
+        }
+      } else {
+        // Fallback
+        savRows.sort((a, b) => compareMonthYear(a.Month, b.Month));
+        let remaining = txBackup.amount;
+        for (const savRow of savRows) {
+          if (remaining <= 0) break;
+          const currentBalance = Number(savRow.Balance) || 0;
+          const deduct = Math.min(remaining, currentBalance);
+          if (deduct > 0) {
+            savRow.Usage = (Number(savRow.Usage) || 0) + deduct;
+            savRow.Balance = currentBalance - deduct;
+            await savRow.save();
+            resultAdjustments.push({ sheet: 'savings_stats', row: savRow.rowNumber, month: savRow.Month, restored: -deduct });
+            remaining -= deduct;
+          }
+        }
+      }
+    }
+  }
+
+  // Delete actual row
+  await row.delete();
+
+  // Mark matching history row as undone (to prevent further confusion)
+  if (matchingHistAction) {
+    matchingHistAction.Undone = true;
+    await matchingHistAction.save();
+  }
+
+  // Add deleteTransaction action to history
+  await addHistory(doc, 'deleteTransaction', { txBackup, resultAdjustments, originalHistoryActionId: matchingHistAction ? matchingHistAction.ID : null });
+  return { success: true };
 }
 
 // ---------- Balances ----------
@@ -261,12 +419,12 @@ async function setMoneyFlowSettings(doc, allowance, mama, wallet, savings) {
 }
 
 // ---------- Monthly Allocation ----------
-async function processNewMonth(doc, month, year) {
+async function processNewMonth(doc, month, year, dateReceived) {
   const now = new Date();
 
   // Use passed parameters if provided
   let monthLabel;
-  let dateStr = now.toLocaleDateString('en-GB');
+  let dateStr = dateReceived || now.toLocaleDateString('en-GB');
 
   // Fetch configured bases first
   const flowSettings = await getMoneyFlowSettings(doc);
@@ -294,8 +452,24 @@ async function processNewMonth(doc, month, year) {
   const savSheet = await getOrCreateSheet(doc, 'savings_stats', ['Month', 'Savings', 'Usage', 'Balance']);
   await savSheet.addRow({ Month: monthLabel, Savings: savings, Usage: 0, Balance: savings });
 
-  await addHistory(doc, 'newMonth', { month: monthLabel, incomeId, savingsId });
+  await addHistory(doc, 'newMonth', { month: monthLabel, incomeId, savingsId, dateReceived: dateStr });
   return { success: true, month: monthLabel };
+}
+
+// ---------- Update Date Received ----------
+async function updateDateReceived(doc, month, newDate) {
+  const statsSheet = await getOrCreateSheet(doc, 'allowance_stats', ['Month', 'Date Received', 'Allowance Amount', 'Usage', 'Savings', 'Balance']);
+  const rows = await statsSheet.getRows();
+  const row = rows.find(r => r.Month.trim().toLowerCase() === month.trim().toLowerCase());
+  if (!row) {
+    throw new Error(`Month row ${month} not found in allowance_stats`);
+  }
+  const oldDate = row['Date Received'];
+  row['Date Received'] = newDate;
+  await row.save();
+
+  await addHistory(doc, 'updateDateReceived', { month, oldDate, newDate });
+  return { success: true };
 }
 
 // ---------- Request Money ----------
@@ -460,11 +634,13 @@ async function redoAction(doc, actionId) {
   // Re-execute based on type
   switch (action.Type) {
     case 'requestMoney': await requestMoney(doc, details.amount); break;
-    case 'newMonth': await processNewMonth(doc); break;
+    case 'newMonth': await processNewMonth(doc, details.month ? details.month.split(' ')[0] : undefined, details.month ? details.month.split(' ')[1] : undefined, details.dateReceived); break;
+    case 'updateDateReceived': await updateDateReceived(doc, details.month, details.newDate); break;
     case 'useSavings': await useSavings(doc, details.amount, details.month); break;
     case 'topUpSavings': await topUpSavings(doc, details.months, details.totalAmount); break;
     case 'setOffsets': await setOffsets(doc, details.wallet, details.savings); break;
     case 'addTransaction': await addTransaction(doc, details.type, details.amount, details.note); break;
+    case 'deleteTransaction': await deleteTransaction(doc, details.txBackup ? details.txBackup.id : null); break;
   }
   action.Undone = false;
   await action.save();
@@ -558,6 +734,9 @@ async function undoAction(doc, actionId) {
         if (rowToDelete) await rowToDelete.delete();
       }
       break;
+    case 'updateDateReceived':
+      await updateDateReceived(doc, details.month, details.oldDate);
+      break;
     case 'setOffsets':
       await setOffsets(doc, details.oldWallet, details.oldSavings);
       break;
@@ -567,6 +746,63 @@ async function undoAction(doc, actionId) {
         const tx5Rows = await txSheet5.getRows();
         const tx5Found = tx5Rows.find(r => r.ID === details.txId);
         if (tx5Found) await tx5Found.delete();
+      }
+      break;
+    case 'deleteTransaction':
+      // To undo a deleteTransaction action, we restore the original deleted transaction
+      // and reverse the adjustments that we applied during deletion.
+      const txSheetRestore = await getOrCreateSheet(doc, 'transactions', ['Date', 'Type', 'Amount', 'Note', 'ID']);
+      await txSheetRestore.addRow({
+        Date: details.txBackup.date,
+        Type: details.txBackup.type,
+        Amount: details.txBackup.amount,
+        Note: details.txBackup.note,
+        ID: details.txBackup.id
+      });
+
+      // Restore adjustments (opposite of what deleteTransaction did, so we use the stored adjustments)
+      if (details.resultAdjustments && details.resultAdjustments.length > 0) {
+        for (const adj of details.resultAdjustments) {
+          if (adj.sheet === 'allowance_stats') {
+            const statsSheet = doc.sheetsByTitle['allowance_stats'];
+            if (statsSheet) {
+              const statsRows = await statsSheet.getRows();
+              const statsRow = statsRows.find(r => r.rowNumber === adj.row || r.Month === adj.month);
+              if (statsRow) {
+                // Deducted was negative of subtraction, so we subtract adj.deducted to revert to previous state
+                statsRow.Usage = (Number(statsRow.Usage) || 0) - adj.deducted;
+                statsRow.Balance = (Number(statsRow.Balance) || 0) + adj.deducted;
+                await statsRow.save();
+              }
+            }
+          } else if (adj.sheet === 'savings_stats') {
+            const savSheet = doc.sheetsByTitle['savings_stats'];
+            if (savSheet) {
+              const savRows = await savSheet.getRows();
+              const savRow = savRows.find(r => r.rowNumber === adj.row || r.Month === adj.month);
+              if (savRow) {
+                if (adj.deducted !== undefined) {
+                  savRow.Usage = (Number(savRow.Usage) || 0) - adj.deducted;
+                  savRow.Balance = (Number(savRow.Balance) || 0) + adj.deducted;
+                } else if (adj.restored !== undefined) {
+                  savRow.Usage = (Number(savRow.Usage) || 0) - adj.restored;
+                  savRow.Balance = (Number(savRow.Balance) || 0) + adj.restored;
+                }
+                await savRow.save();
+              }
+            }
+          }
+        }
+      }
+
+      // Mark original history action as active again if one was marked undone
+      if (details.originalHistoryActionId) {
+        const histRows = await sheet.getRows();
+        const origHistAction = histRows.find(r => r.ID === details.originalHistoryActionId);
+        if (origHistAction) {
+          origHistAction.Undone = false;
+          await origHistAction.save();
+        }
       }
       break;
   }
