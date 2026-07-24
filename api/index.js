@@ -5,6 +5,32 @@ function uuid() {
   return 'xxxx-xxxx-xxxx-xxxx-xxxx'.replace(/x/g, () => Math.floor(Math.random() * 16).toString(16));
 }
 
+const MONTH_MAP = {
+  // English
+  january: 1, february: 2, march: 3, april: 4, may: 5, june: 6,
+  july: 7, august: 8, september: 9, october: 10, november: 11, december: 12,
+  jan: 1, feb: 2, mar: 3, apr: 4, jun: 6, jul: 7, aug: 8, sep: 9, oct: 10, nov: 11, dec: 12,
+  // Malay
+  januari: 1, februari: 2, mac: 3, mei: 5, jun: 6, julai: 7, ogos: 8, oktober: 10, disember: 12
+};
+
+function parseMonthYear(monthYearStr) {
+  if (!monthYearStr) return { monthNum: 0, year: 0 };
+  const parts = monthYearStr.trim().split(/\s+/);
+  if (parts.length < 2) return { monthNum: 0, year: 0 };
+  const monthName = parts[0].toLowerCase();
+  const year = parseInt(parts[1]) || 0;
+  const monthNum = MONTH_MAP[monthName] || 0;
+  return { monthNum, year };
+}
+
+function compareMonthYear(aStr, bStr) {
+  const a = parseMonthYear(aStr);
+  const b = parseMonthYear(bStr);
+  if (a.year !== b.year) return a.year - b.year;
+  return a.monthNum - b.monthNum;
+}
+
 async function parseBody(req) {
   return new Promise(resolve => {
     let body = '';
@@ -19,7 +45,7 @@ async function getDoc() {
   const doc = new GoogleSpreadsheet(process.env.GOOGLE_SHEET_ID);
   await doc.useServiceAccountAuth({
     client_email: process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL,
-    private_key: process.env.GOOGLE_PRIVATE_KEY.replace(/\\n/g, '\n'),
+    private_key: (process.env.GOOGLE_PRIVATE_KEY || '').replace(/\\n/g, '\n'),
   });
   await doc.loadInfo();
   return doc;
@@ -34,7 +60,16 @@ async function getOrCreateSheet(doc, title, headers) {
 module.exports = async (req, res) => {
   await cors()(req, res, async () => {
     const { action } = req.query;
-    const body = req.method === 'POST' ? await parseBody(req) : {};
+    let body = {};
+    if (req.method === 'POST') {
+      if (req.body && typeof req.body === 'object') {
+        body = req.body;
+      } else if (req.body && typeof req.body === 'string') {
+        try { body = JSON.parse(req.body); } catch { body = {}; }
+      } else {
+        body = await parseBody(req);
+      }
+    }
 
     if (action === 'login') {
       if (body.username === process.env.ADMIN_USERNAME && body.password === process.env.ADMIN_PASSWORD) {
@@ -127,10 +162,12 @@ async function setOffsets(doc, wallet, savings) {
   let sheet = doc.sheetsByTitle['manual_offsets'];
   if (!sheet) {
     sheet = await doc.addSheet({ title: 'manual_offsets', headerValues: ['wallet_offset', 'savings_offset'] });
-    await sheet.addRow({ wallet_offset: 0, savings_offset: 0 });
-    await sheet.addRow({ wallet_offset: 0, savings_offset: 0 });
   }
-  const rows = await sheet.getRows();
+  let rows = await sheet.getRows();
+  while (rows.length < 2) {
+    await sheet.addRow({ wallet_offset: 0, savings_offset: 0 });
+    rows = await sheet.getRows();
+  }
   const oldWallet = Number(rows[0].wallet_offset) || 0;
   const oldSavings = Number(rows[1].savings_offset) || 0;
   rows[0].wallet_offset = wallet;
@@ -167,19 +204,14 @@ async function processNewMonth(doc) {
 
 // ---------- Request Money ----------
 async function requestMoney(doc, amount) {
-  const txSheet = doc.sheetsByTitle['transactions'];
-  if (!txSheet) return { error: 'No transactions sheet' };
+  const txSheet = await getOrCreateSheet(doc, 'transactions', ['Date', 'Type', 'Amount', 'Note', 'ID']);
   const txId = uuid();
   await txSheet.addRow({ Date: new Date().toISOString(), Type: 'refill', Amount: amount, Note: 'Transfer from Mama', ID: txId });
 
   const statsSheet = doc.sheetsByTitle['allowance_stats'];
   const rows = await statsSheet.getRows();
   const withBalance = rows.filter(r => Number(r.Balance) > 0);
-  const monthOrder = { Januari:1,Februari:2,Mac:3,April:4,Mei:5,Jun:6,Julai:7,Ogos:8,September:9,Oktober:10,November:11,Disember:12 };
-  withBalance.sort((a,b) => {
-    const [am,ay]=a.Month.split(' '),[bm,by]=b.Month.split(' ');
-    return (parseInt(ay)-parseInt(by))||((monthOrder[am]||0)-(monthOrder[bm]||0));
-  });
+  withBalance.sort((a, b) => compareMonthYear(a.Month, b.Month));
 
   let remaining = amount;
   const adjustments = [];
@@ -206,11 +238,7 @@ async function useSavings(doc, amount) {
   const savSheet = doc.sheetsByTitle['savings_stats'];
   const rows = await savSheet.getRows();
   const withBalance = rows.filter(r => Number(r.Balance) > 0);
-  const monthOrder = { Januari:1,Februari:2,Mac:3,April:4,Mei:5,Jun:6,Julai:7,Ogos:8,September:9,Oktober:10,November:11,Disember:12 };
-  withBalance.sort((a,b) => {
-    const [am,ay]=a.Month.split(' '),[bm,by]=b.Month.split(' ');
-    return (parseInt(ay)-parseInt(by))||((monthOrder[am]||0)-(monthOrder[bm]||0));
-  });
+  withBalance.sort((a, b) => compareMonthYear(a.Month, b.Month));
 
   let remaining = amount;
   const adjustments = [];
@@ -239,11 +267,7 @@ async function topUpSavings(doc, months, totalAmount) {
   const adjustments = [];
   let remaining = totalAmount;
 
-  const monthOrder = { Januari:1,Februari:2,Mac:3,April:4,Mei:5,Jun:6,Julai:7,Ogos:8,September:9,Oktober:10,November:11,Disember:12 };
-  months.sort((a,b) => {
-    const [am,ay]=a.month.split(' '),[bm,by]=b.month.split(' ');
-    return (parseInt(ay)-parseInt(by))||((monthOrder[am]||0)-(monthOrder[bm]||0));
-  });
+  months.sort((a, b) => compareMonthYear(a.month, b.month));
 
   for (const sm of months) {
     if (remaining <= 0) break;
@@ -322,13 +346,13 @@ async function redoAction(doc, actionId) {
   const rows = await sheet.getRows();
   const action = rows.find(r => r.ID === actionId);
   if (!action) return { error: 'Action not found' };
-  if (action.Undone !== 'true') return { error: 'Action is not undone' };
+  if (action.Undone !== 'true' && action.Undone !== true) return { error: 'Action is not undone' };
 
   const details = JSON.parse(action.Details);
   // Re-execute based on type
   switch (action.Type) {
     case 'requestMoney': await requestMoney(doc, details.amount); break;
-    case 'processNewMonth': await processNewMonth(doc); break;
+    case 'newMonth': await processNewMonth(doc); break;
     case 'useSavings': await useSavings(doc, details.amount); break;
     case 'topUpSavings': await topUpSavings(doc, details.months, details.totalAmount); break;
     case 'setOffsets': await setOffsets(doc, details.wallet, details.savings); break;
@@ -344,7 +368,7 @@ async function undoAction(doc, actionId) {
   const rows = await sheet.getRows();
   const action = rows.find(r => r.ID === actionId);
   if (!action) return { error: 'Action not found' };
-  if (action.Undone === 'true') return { error: 'Already undone' };
+  if (action.Undone === 'true' || action.Undone === true) return { error: 'Already undone' };
 
   const details = JSON.parse(action.Details);
   // Reverse the action
@@ -352,26 +376,77 @@ async function undoAction(doc, actionId) {
     case 'requestMoney':
       // Delete tx and restore allowances
       const txSheet = doc.sheetsByTitle['transactions'];
-      const txRows = await txSheet.getRows();
-      const tx = txRows.find(r => r.ID === details.txId);
-      if (tx) { await tx.delete(); }
+      if (txSheet) {
+        const txRows = await txSheet.getRows();
+        const tx = txRows.find(r => r.ID === details.txId);
+        if (tx) { await tx.delete(); }
+      }
       const statsSheet = doc.sheetsByTitle['allowance_stats'];
-      const statsRows = await statsSheet.getRows();
-      for (const adj of details.adjustments) {
-        const row = statsRows.find(r => r.rowNumber === adj.row);
-        if (row) { row.Usage = Number(row.Usage)-adj.deducted; row.Balance = Number(row.Balance)+adj.deducted; await row.save(); }
+      if (statsSheet) {
+        const statsRows = await statsSheet.getRows();
+        for (const adj of details.adjustments) {
+          const row = statsRows.find(r => r.rowNumber === adj.row);
+          if (row) { row.Usage = Number(row.Usage)-adj.deducted; row.Balance = Number(row.Balance)+adj.deducted; await row.save(); }
+        }
       }
       break;
     case 'useSavings':
       const tx2 = doc.sheetsByTitle['transactions'];
-      const tx2Rows = await tx2.getRows();
-      const tx2Found = tx2Rows.find(r => r.ID === details.txId);
-      if (tx2Found) await tx2Found.delete();
+      if (tx2) {
+        const tx2Rows = await tx2.getRows();
+        const tx2Found = tx2Rows.find(r => r.ID === details.txId);
+        if (tx2Found) await tx2Found.delete();
+      }
       const savSheet = doc.sheetsByTitle['savings_stats'];
-      const savRows = await savSheet.getRows();
-      for (const adj of details.adjustments) {
-        const row = savRows.find(r => r.rowNumber === adj.row);
-        if (row) { row.Usage = Number(row.Usage)-adj.deducted; row.Balance = Number(row.Balance)+adj.deducted; await row.save(); }
+      if (savSheet) {
+        const savRows = await savSheet.getRows();
+        for (const adj of details.adjustments) {
+          const row = savRows.find(r => r.rowNumber === adj.row);
+          if (row) { row.Usage = Number(row.Usage)-adj.deducted; row.Balance = Number(row.Balance)+adj.deducted; await row.save(); }
+        }
+      }
+      break;
+    case 'topUpSavings':
+      const tx3 = doc.sheetsByTitle['transactions'];
+      if (tx3) {
+        const tx3Rows = await tx3.getRows();
+        const tx3Found = tx3Rows.find(r => r.ID === details.txId);
+        if (tx3Found) await tx3Found.delete();
+      }
+      const savSheet3 = doc.sheetsByTitle['savings_stats'];
+      if (savSheet3) {
+        const savRows3 = await savSheet3.getRows();
+        for (const adj of details.adjustments) {
+          const row = savRows3.find(r => r.rowNumber === adj.row);
+          if (row) {
+            row.Usage = Number(row.Usage) + adj.restored;
+            row.Balance = Number(row.Balance) - adj.restored;
+            await row.save();
+          }
+        }
+      }
+      break;
+    case 'newMonth':
+      const tx4 = doc.sheetsByTitle['transactions'];
+      if (tx4) {
+        const tx4Rows = await tx4.getRows();
+        const tx4Income = tx4Rows.find(r => r.ID === details.incomeId);
+        if (tx4Income) await tx4Income.delete();
+        const tx4Rows2 = await tx4.getRows();
+        const tx4Savings = tx4Rows2.find(r => r.ID === details.savingsId);
+        if (tx4Savings) await tx4Savings.delete();
+      }
+      const statsSheet4 = doc.sheetsByTitle['allowance_stats'];
+      if (statsSheet4) {
+        const statsRows4 = await statsSheet4.getRows();
+        const rowToDelete = statsRows4.find(r => r.Month === details.month);
+        if (rowToDelete) await rowToDelete.delete();
+      }
+      const savSheet4 = doc.sheetsByTitle['savings_stats'];
+      if (savSheet4) {
+        const savRows4 = await savSheet4.getRows();
+        const rowToDelete = savRows4.find(r => r.Month === details.month);
+        if (rowToDelete) await rowToDelete.delete();
       }
       break;
     case 'setOffsets':

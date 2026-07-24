@@ -93,6 +93,14 @@
     td { padding:10px 8px; border-bottom:1px solid var(--table-border); }
     tbody tr:nth-child(even) { background:var(--table-row-even); }
     .bank-list { margin:0 -22px; }
+    select {
+      width: 100%; padding: 12px; border-radius: 16px; background: var(--btn-glass);
+      color: var(--text-primary); border: 1px solid var(--card-border); outline: none;
+      font-size: 1rem;
+    }
+    select option {
+      background: var(--bg-mid); color: var(--text-primary);
+    }
     .bank-item { display:flex; justify-content:space-between; padding:12px 22px; border-bottom:1px solid var(--bank-border); }
     .bank-item:nth-child(even) { background:var(--bank-row-even); }
     .bank-item:nth-child(odd) { background:var(--bank-row-odd); }
@@ -120,6 +128,7 @@
       <div class="header">
         <div class="logo">Allowance<span>Manager</span></div>
         <div class="header-right">
+          <button class="btn btn-primary" onclick="handleProcessNewMonth()">📅 New Month</button>
           <button class="btn" onclick="toggleTheme()">🌙</button>
           <button class="btn" onclick="openOffsetModal()">⚙️</button>
           <button class="btn" onclick="toggleHistory()">📋</button>
@@ -153,13 +162,60 @@
 
       <!-- Cards -->
       <div class="cards-grid">
-        <div class="card"><div class="card-title">Mama Account</div><div class="balance-row"><span>Current balance</span><span class="balance-amount" id="mamaBalance">RM --</span></div></div>
-        <div class="card"><div class="card-title">Savings Balance</div><div class="balance-row"><span>Total savings</span><span class="balance-amount" id="savingsBalance">RM --</span></div></div>
+        <div class="card">
+          <div class="card-title">Mama Account</div>
+          <div class="balance-row">
+            <span>Current balance</span>
+            <span class="balance-amount" id="mamaBalance">RM --</span>
+          </div>
+          <div style="margin-top: 16px; display: flex; gap: 8px;">
+            <input type="number" id="requestAmount" placeholder="Amount (RM)" step="0.01" style="flex: 1; min-width: 0;">
+            <button class="btn btn-primary" onclick="handleRequestMoney()">Request</button>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title">Savings Balance</div>
+          <div class="balance-row">
+            <span>Total savings</span>
+            <span class="balance-amount" id="savingsBalance">RM --</span>
+          </div>
+          <div style="margin-top: 16px; display: flex; gap: 8px;">
+            <button class="btn" style="flex: 1;" onclick="openUseSavingsModal()">📉 Use</button>
+            <button class="btn btn-primary" style="flex: 1;" onclick="openTopUpSavingsModal()">📈 Top Up</button>
+          </div>
+        </div>
         <div class="card full-width"><div class="card-title">Total Remaining</div><div class="balance-row"><span>Combined</span><span class="balance-amount" id="totalRemaining">RM --</span></div></div>
         <div class="card full-width"><div class="card-title">Monthly Usage</div><div style="display:flex; gap:20px;"><div id="transfersGrid" style="display:flex; flex-wrap:wrap; gap:10px;"></div><div id="ringContainer"></div></div></div>
         <div class="card full-width"><div class="card-title">Allowance Statistics</div><div class="table-wrapper"><table id="statsTable"><thead><tr><th>Month</th><th>Received</th><th>Allowance</th><th>Usage</th><th>Savings</th><th>Balance</th></tr></thead><tbody></tbody></table></div></div>
         <div class="card full-width"><div class="card-title">Savings Statistics</div><div class="table-wrapper"><table id="savingsStatsTable"><thead><tr><th>Month</th><th>Savings</th><th>Usage</th><th>Balance</th></tr></thead><tbody></tbody></table></div></div>
         <div class="card full-width"><div class="card-title">Bank Accounts</div><div id="bankAccounts" class="bank-list"></div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Use Savings Modal -->
+  <div class="modal-overlay" id="useSavingsModal">
+    <div class="modal-card">
+      <h3 style="margin-bottom: 4px;">Use Savings</h3>
+      <p style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 12px;">Enter the amount of savings you want to withdraw or use.</p>
+      <input type="number" id="useSavingsAmount" placeholder="Amount (RM)" step="0.01" style="width: 100%; margin-bottom: 12px;">
+      <div style="display:flex; gap:12px; justify-content:center;">
+        <button class="btn" onclick="closeUseSavingsModal()">Cancel</button>
+        <button class="btn btn-danger" onclick="handleUseSavings()">Withdraw</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Top Up Savings Modal -->
+  <div class="modal-overlay" id="topUpSavingsModal">
+    <div class="modal-card">
+      <h3 style="margin-bottom: 4px;">Top Up Savings</h3>
+      <p style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 12px;">Select the target month and enter the top-up amount.</p>
+      <select id="topUpMonth" style="width: 100%; margin-bottom: 12px;"></select>
+      <input type="number" id="topUpAmount" placeholder="Amount (RM)" step="0.01" style="width: 100%; margin-bottom: 12px;">
+      <div style="display:flex; gap:12px; justify-content:center;">
+        <button class="btn" onclick="closeTopUpSavingsModal()">Cancel</button>
+        <button class="btn btn-primary" onclick="handleTopUpSavings()">Top Up</button>
       </div>
     </div>
   </div>
@@ -200,11 +256,29 @@
       document.getElementById('savingsBalance').textContent = `RM ${dashboardData.savingsBalance.toFixed(2)}`;
       document.getElementById('totalRemaining').textContent = `RM ${dashboardData.totalRemaining.toFixed(2)}`;
       document.getElementById('transfersGrid').innerHTML = dashboardData.monthlyTransfers.map(t => `<div class="card" style="padding:8px 12px; font-size:0.8rem;"><span style="font-size:0.65rem; color:var(--text-secondary);">${t.month}</span><span style="font-weight:700;">RM ${t.amount.toFixed(2)}</span></div>`).join('');
-      // Ring
-      const now = new Date(); const cm = now.toLocaleString('default',{month:'short',year:'numeric'});
-      let cu = 0; dashboardData.allowanceStats.forEach(s => { if (s.month===cm) cu = s.usage; });
-      const perc = Math.min(100,(cu/430)*100), col = perc<50?'#10b981':(perc<90?'#f59e0b':'#ef4444');
-      document.getElementById('ringContainer').innerHTML = `<svg width="100" height="100"><circle cx="50" cy="50" r="40" fill="none" stroke="var(--ring-bg)" stroke-width="7"/><circle cx="50" cy="50" r="40" fill="none" stroke="${col}" stroke-width="7" stroke-dasharray="251.2" stroke-dashoffset="${251.2-(perc/100)*251.2}" stroke-linecap="round" transform="rotate(-90 50 50)"/><text x="50" y="46" text-anchor="middle" fill="var(--text-primary)" font-weight="700">${Math.round(perc)}%</text><text x="50" y="65" text-anchor="middle" fill="var(--text-secondary)" font-size="9">RM ${cu.toFixed(0)} / 430</text></svg>`;
+
+      // Ring Chart (Dynamic and robust Month match with fallback)
+      let cu = 0;
+      let allowanceLimit = 430;
+      if (dashboardData.allowanceStats && dashboardData.allowanceStats.length > 0) {
+        const now = new Date();
+        const currentMonthLabel = now.toLocaleString('default', { month: 'long', year: 'numeric' });
+        let matched = dashboardData.allowanceStats.find(s => s.month.trim().toLowerCase() === currentMonthLabel.trim().toLowerCase());
+
+        // Smarter fallback: try finding any row from the current year, or default to the most recent month row
+        if (!matched) {
+          matched = dashboardData.allowanceStats[dashboardData.allowanceStats.length - 1];
+        }
+
+        if (matched) {
+          cu = matched.usage;
+          allowanceLimit = matched.allowance || 430;
+        }
+      }
+
+      const perc = Math.min(100, (cu / allowanceLimit) * 100), col = perc<50?'#10b981':(perc<90?'#f59e0b':'#ef4444');
+      document.getElementById('ringContainer').innerHTML = `<svg width="100" height="100"><circle cx="50" cy="50" r="40" fill="none" stroke="var(--ring-bg)" stroke-width="7"/><circle cx="50" cy="50" r="40" fill="none" stroke="${col}" stroke-width="7" stroke-dasharray="251.2" stroke-dashoffset="${251.2-(perc/100)*251.2}" stroke-linecap="round" transform="rotate(-90 50 50)"/><text x="50" y="46" text-anchor="middle" fill="var(--text-primary)" font-weight="700">${Math.round(perc)}%</text><text x="50" y="65" text-anchor="middle" fill="var(--text-secondary)" font-size="9">RM ${cu.toFixed(0)} / ${allowanceLimit}</text></svg>`;
+
       document.querySelector('#statsTable tbody').innerHTML = dashboardData.allowanceStats.map(s => `<tr><td>${s.month}</td><td>${s.dateReceived}</td><td>RM ${s.allowance.toFixed(2)}</td><td>RM ${s.usage.toFixed(2)}</td><td>RM ${s.savings.toFixed(2)}</td><td>RM ${s.balance.toFixed(2)}</td></tr>`).join('');
       document.querySelector('#savingsStatsTable tbody').innerHTML = dashboardData.savingsStats.map(s => `<tr><td>${s.month}</td><td>RM ${s.savings.toFixed(2)}</td><td>RM ${s.usage.toFixed(2)}</td><td>RM ${s.balance.toFixed(2)}</td></tr>`).join('');
       document.getElementById('bankAccounts').innerHTML = dashboardData.bankAccounts.map(b => `<div class="bank-item"><span>${b.name}</span><span>${b.number}</span></div>`).join('');
@@ -214,35 +288,78 @@
     async function loadHistory() {
       const res = await fetch(`${API}?action=getHistory`, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({token})});
       historyData = await res.json();
+
+      // Sort oldest first for correct stack ordering
+      historyData.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+
+      // Active and Undone candidates
+      undoStack = historyData.filter(h => !h.undone);
+      redoStack = historyData.filter(h => h.undone);
+
       renderHistory();
+      updateUndoRedoButtons();
     }
+
     function renderHistory() {
-      document.getElementById('historyList').innerHTML = historyData.map(h => `
-        <div class="history-item">
-          <span>${h.type} – ${new Date(h.timestamp).toLocaleString()}</span>
-          <button class="btn" style="padding:4px 8px; font-size:0.7rem;" onclick="redoHistory('${h.id}')">↩ Redo</button>
+      // Display history in reverse chronological order (most recent first) for UI
+      const sortedHistory = [...historyData].reverse();
+      if (sortedHistory.length === 0) {
+        document.getElementById('historyList').innerHTML = '<div style="padding: 10px; text-align: center; color: var(--text-secondary); font-size: 0.85rem;">No history recorded yet</div>';
+        return;
+      }
+      document.getElementById('historyList').innerHTML = sortedHistory.map(h => `
+        <div class="history-item" style="display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 6px 0; border-bottom: 1px solid var(--table-border);">
+          <span style="${h.undone ? 'text-decoration: line-through; color: var(--text-secondary);' : ''}; font-size: 0.8rem;">
+            <strong>${h.type}</strong> – ${new Date(h.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+          </span>
+          ${h.undone ?
+            `<button class="btn" style="padding: 4px 8px; font-size: 0.65rem;" onclick="redoHistory('${h.id}')">↪ Redo</button>` :
+            `<button class="btn btn-danger" style="padding: 4px 8px; font-size: 0.65rem;" onclick="undoHistory('${h.id}')">↩ Undo</button>`
+          }
         </div>`).join('');
     }
+
+    async function undoHistory(id) {
+      if (!confirm('Undo this action?')) return;
+      const res = await fetch(`${API}?action=undoAction`, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({token, actionId:id})});
+      const data = await res.json();
+      if (data.error) alert(data.error);
+      await loadHistory();
+      await loadDashboard();
+    }
+
     async function redoHistory(id) {
       if (!confirm('Redo this action?')) return;
-      await fetch(`${API}?action=redoAction`, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({token, actionId:id})});
-      loadDashboard(); loadHistory();
+      const res = await fetch(`${API}?action=redoAction`, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({token, actionId:id})});
+      const data = await res.json();
+      if (data.error) alert(data.error);
+      await loadHistory();
+      await loadDashboard();
     }
+
     function toggleHistory() { document.getElementById('historyPanel').classList.toggle('open'); }
 
     // ----- Undo/Redo -----
     async function undo() {
       if (undoStack.length === 0) return;
-      const action = undoStack.pop(); redoStack.push(action);
-      await fetch(`${API}?action=undoAction`, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({token, actionId:action.id})});
-      loadDashboard(); loadHistory(); updateUndoRedoButtons();
+      const action = undoStack[undoStack.length - 1];
+      const res = await fetch(`${API}?action=undoAction`, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({token, actionId:action.id})});
+      const data = await res.json();
+      if (data.error) alert(data.error);
+      await loadHistory();
+      await loadDashboard();
     }
+
     async function redo() {
       if (redoStack.length === 0) return;
-      const action = redoStack.pop(); undoStack.push(action);
-      await fetch(`${API}?action=redoAction`, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({token, actionId:action.id})});
-      loadDashboard(); loadHistory(); updateUndoRedoButtons();
+      const action = redoStack[redoStack.length - 1];
+      const res = await fetch(`${API}?action=redoAction`, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({token, actionId:action.id})});
+      const data = await res.json();
+      if (data.error) alert(data.error);
+      await loadHistory();
+      await loadDashboard();
     }
+
     function updateUndoRedoButtons() {
       document.getElementById('undoBtn').disabled = undoStack.length === 0;
       document.getElementById('redoBtn').disabled = redoStack.length === 0;
@@ -262,6 +379,130 @@
       const w = parseFloat(document.getElementById('walletOffset').value)||0, s = parseFloat(document.getElementById('savingsOffset').value)||0;
       await fetch(`${API}?action=setOffsets`, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({token, walletOffset:w, savingsOffset:s})});
       closeOffsetModal(); loadDashboard(); loadHistory();
+    }
+
+    // ----- Use Savings Modal -----
+    function openUseSavingsModal() {
+      document.getElementById('useSavingsAmount').value = '';
+      document.getElementById('useSavingsModal').classList.add('active');
+    }
+    function closeUseSavingsModal() {
+      document.getElementById('useSavingsModal').classList.remove('active');
+    }
+    async function handleUseSavings() {
+      const amountInput = document.getElementById('useSavingsAmount');
+      const amount = parseFloat(amountInput.value);
+      if (isNaN(amount) || amount <= 0) {
+        alert('Please enter a valid amount.');
+        return;
+      }
+      if (!confirm(`Are you sure you want to withdraw RM ${amount.toFixed(2)} from savings?`)) return;
+
+      const res = await fetch(`${API}?action=useSavings`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token, amount })
+      });
+      const data = await res.json();
+      if (data.error) {
+        alert(data.error);
+      } else {
+        closeUseSavingsModal();
+        alert('Savings withdrawn successfully!');
+        await loadDashboard();
+        await loadHistory();
+      }
+    }
+
+    // ----- Top Up Savings Modal -----
+    function openTopUpSavingsModal() {
+      const select = document.getElementById('topUpMonth');
+      if (dashboardData && dashboardData.savingsStats && dashboardData.savingsStats.length > 0) {
+        select.innerHTML = dashboardData.savingsStats.map(s =>
+          `<option value="${s.month}">${s.month} (Used: RM ${s.usage.toFixed(2)})</option>`
+        ).join('');
+      } else {
+        select.innerHTML = '<option value="">No months available</option>';
+      }
+      document.getElementById('topUpAmount').value = '';
+      document.getElementById('topUpSavingsModal').classList.add('active');
+    }
+    function closeTopUpSavingsModal() {
+      document.getElementById('topUpSavingsModal').classList.remove('active');
+    }
+    async function handleTopUpSavings() {
+      const month = document.getElementById('topUpMonth').value;
+      const amountInput = document.getElementById('topUpAmount');
+      const amount = parseFloat(amountInput.value);
+      if (!month) {
+        alert('Please select a month.');
+        return;
+      }
+      if (isNaN(amount) || amount <= 0) {
+        alert('Please enter a valid amount.');
+        return;
+      }
+      if (!confirm(`Are you sure you want to top up RM ${amount.toFixed(2)} for ${month}?`)) return;
+
+      const res = await fetch(`${API}?action=topUpSavings`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token, months: [{ month }], totalAmount: amount })
+      });
+      const data = await res.json();
+      if (data.error) {
+        alert(data.error);
+      } else {
+        closeTopUpSavingsModal();
+        alert('Savings topped up successfully!');
+        await loadDashboard();
+        await loadHistory();
+      }
+    }
+
+    // ----- Request Money -----
+    async function handleRequestMoney() {
+      const amountInput = document.getElementById('requestAmount');
+      const amount = parseFloat(amountInput.value);
+      if (isNaN(amount) || amount <= 0) {
+        alert('Please enter a valid amount.');
+        return;
+      }
+      if (!confirm(`Are you sure you want to request RM ${amount.toFixed(2)} from Mama?`)) return;
+
+      const res = await fetch(`${API}?action=requestMoney`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token, amount })
+      });
+      const data = await res.json();
+      if (data.error) {
+        alert(data.error);
+      } else {
+        amountInput.value = '';
+        alert('Money requested successfully!');
+        await loadDashboard();
+        await loadHistory();
+      }
+    }
+
+    // ----- Process New Month -----
+    async function handleProcessNewMonth() {
+      if (!confirm('Are you sure you want to start a new month? This will allocate RM 430.00, set RM 30.00 to savings, RM 100.00 to Maybank usage, and add RM 300.00 to Mama Account.')) return;
+
+      const res = await fetch(`${API}?action=processNewMonth`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token })
+      });
+      const data = await res.json();
+      if (data.error) {
+        alert(data.error);
+      } else {
+        alert(`Successfully processed new month: ${data.month}`);
+        await loadDashboard();
+        await loadHistory();
+      }
     }
 
     // ----- Theme -----
