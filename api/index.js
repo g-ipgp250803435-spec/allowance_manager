@@ -86,10 +86,11 @@ module.exports = async (req, res) => {
       switch (action) {
         case 'getDashboard': result = await getDashboardData(doc); break;
         case 'requestMoney': result = await requestMoney(doc, body.amount); break;
-        case 'processNewMonth': result = await processNewMonth(doc); break;
+        case 'processNewMonth': result = await processNewMonth(doc, body.month, body.year); break;
         case 'useSavings': result = await useSavings(doc, body.amount); break;
         case 'topUpSavings': result = await topUpSavings(doc, body.months, body.totalAmount); break;
         case 'setOffsets': result = await setOffsets(doc, body.walletOffset, body.savingsOffset); break;
+        case 'setMoneyFlowSettings': result = await setMoneyFlowSettings(doc, body.allowance, body.mama, body.wallet, body.savings); break;
         case 'getHistory': result = await getHistory(doc); break;
         case 'getTransactions': result = await getTransactions(doc); break;
         case 'addTransaction': result = await addTransaction(doc, body.type, body.amount, body.note); break;
@@ -113,11 +114,13 @@ async function getDashboardData(doc) {
   const stats = await getAllowanceStats(doc);
   const savingsStats = await getSavingsStats(doc);
   const transfers = await getMonthlyMomTransfers(doc);
+  const moneyFlowSettings = await getMoneyFlowSettings(doc);
   return {
     mamaAccount: balance + offsets.wallet,
     savingsBalance: savingsBalance + offsets.savings,
     totalRemaining: balance + offsets.wallet + savingsBalance + offsets.savings,
     offsets,
+    moneyFlowSettings,
     allowanceStats: stats,
     savingsStats,
     monthlyTransfers: transfers,
@@ -202,13 +205,64 @@ async function setOffsets(doc, wallet, savings) {
   return { success: true };
 }
 
+// ---------- Money Flow Settings ----------
+async function getMoneyFlowSettings(doc) {
+  const sheet = doc.sheetsByTitle['money_flow_settings'];
+  if (!sheet) {
+    return { allowance: 430, mama: 300, wallet: 100, savings: 30 };
+  }
+  const rows = await sheet.getRows();
+  if (rows.length === 0) {
+    return { allowance: 430, mama: 300, wallet: 100, savings: 30 };
+  }
+  return {
+    allowance: Number(rows[0].allowance) || 430,
+    mama: Number(rows[0].mama) || 300,
+    wallet: Number(rows[0].wallet) || 100,
+    savings: Number(rows[0].savings) || 30
+  };
+}
+
+async function setMoneyFlowSettings(doc, allowance, mama, wallet, savings) {
+  let sheet = doc.sheetsByTitle['money_flow_settings'];
+  if (!sheet) {
+    sheet = await doc.addSheet({ title: 'money_flow_settings', headerValues: ['allowance', 'mama', 'wallet', 'savings'] });
+  }
+  let rows = await sheet.getRows();
+  if (rows.length === 0) {
+    await sheet.addRow({ allowance, mama, wallet, savings });
+  } else {
+    rows[0].allowance = allowance;
+    rows[0].mama = mama;
+    rows[0].wallet = wallet;
+    rows[0].savings = savings;
+    await rows[0].save();
+  }
+  await addHistory(doc, 'setMoneyFlowSettings', { allowance, mama, wallet, savings });
+  return { success: true };
+}
+
 // ---------- Monthly Allocation ----------
-async function processNewMonth(doc) {
+async function processNewMonth(doc, month, year) {
   const now = new Date();
-  const monthLabel = now.toLocaleString('default', { month: 'long', year: 'numeric' });
-  const dateStr = now.toLocaleDateString('en-GB');
-  const monthlyAllowance = 430, savings = 30, maybank = 100;
-  const custodian = monthlyAllowance - savings - maybank;
+
+  // Use passed parameters if provided
+  let monthLabel;
+  let dateStr = now.toLocaleDateString('en-GB');
+
+  // Fetch configured bases first
+  const flowSettings = await getMoneyFlowSettings(doc);
+  const monthlyAllowance = flowSettings.allowance; // Default 430
+  const savings = flowSettings.savings; // Default 30
+  const walletAmount = flowSettings.wallet; // Default 100 (formerly maybank)
+  const custodian = monthlyAllowance - savings - walletAmount;
+
+  if (month && year) {
+    // month is "January" - "December"
+    monthLabel = `${month} ${year}`;
+  } else {
+    monthLabel = now.toLocaleString('default', { month: 'long', year: 'numeric' });
+  }
 
   const txSheet = doc.sheetsByTitle['transactions'] || await doc.addSheet({ title: 'transactions', headerValues: ['Date', 'Type', 'Amount', 'Note', 'ID'] });
   const incomeId = uuid();
@@ -217,7 +271,7 @@ async function processNewMonth(doc) {
   await txSheet.addRow({ Date: now.toISOString(), Type: 'savings', Amount: savings, Note: `Monthly savings (${monthLabel})`, ID: savingsId });
 
   const statsSheet = await getOrCreateSheet(doc, 'allowance_stats', ['Month', 'Date Received', 'Allowance Amount', 'Usage', 'Savings', 'Balance']);
-  await statsSheet.addRow({ Month: monthLabel, 'Date Received': dateStr, 'Allowance Amount': monthlyAllowance, Usage: maybank, Savings: savings, Balance: custodian });
+  await statsSheet.addRow({ Month: monthLabel, 'Date Received': dateStr, 'Allowance Amount': monthlyAllowance, Usage: walletAmount, Savings: savings, Balance: custodian });
 
   const savSheet = await getOrCreateSheet(doc, 'savings_stats', ['Month', 'Savings', 'Usage', 'Balance']);
   await savSheet.addRow({ Month: monthLabel, Savings: savings, Usage: 0, Balance: savings });
