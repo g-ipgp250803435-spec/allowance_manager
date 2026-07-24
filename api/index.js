@@ -87,7 +87,7 @@ module.exports = async (req, res) => {
         case 'getDashboard': result = await getDashboardData(doc); break;
         case 'requestMoney': result = await requestMoney(doc, body.amount); break;
         case 'processNewMonth': result = await processNewMonth(doc, body.month, body.year); break;
-        case 'useSavings': result = await useSavings(doc, body.amount); break;
+        case 'useSavings': result = await useSavings(doc, body.amount, body.month); break;
         case 'topUpSavings': result = await topUpSavings(doc, body.months, body.totalAmount); break;
         case 'setOffsets': result = await setOffsets(doc, body.walletOffset, body.savingsOffset); break;
         case 'setMoneyFlowSettings': result = await setMoneyFlowSettings(doc, body.allowance, body.mama, body.wallet, body.savings); break;
@@ -308,15 +308,27 @@ async function requestMoney(doc, amount) {
 }
 
 // ---------- Use Savings ----------
-async function useSavings(doc, amount) {
+async function useSavings(doc, amount, month) {
   const txSheet = doc.sheetsByTitle['transactions'];
   const txId = uuid();
-  await txSheet.addRow({ Date: new Date().toISOString(), Type: 'savings_usage', Amount: amount, Note: 'Used savings', ID: txId });
+  const noteSuffix = month ? ` (${month})` : '';
+  await txSheet.addRow({ Date: new Date().toISOString(), Type: 'savings_usage', Amount: amount, Note: `Used savings${noteSuffix}`, ID: txId });
 
   const savSheet = doc.sheetsByTitle['savings_stats'];
   const rows = await savSheet.getRows();
-  const withBalance = rows.filter(r => Number(r.Balance) > 0);
-  withBalance.sort((a, b) => compareMonthYear(a.Month, b.Month));
+  let withBalance = rows.filter(r => Number(r.Balance) > 0);
+  if (month) {
+    withBalance = withBalance.filter(r => r.Month.trim().toLowerCase() === month.trim().toLowerCase());
+    if (withBalance.length === 0) {
+      throw new Error(`No available savings balance found for ${month}`);
+    }
+    const available = Number(withBalance[0].Balance);
+    if (amount > available) {
+      throw new Error(`Withdrawal amount exceeding available balance for ${month} (Available: RM${available.toFixed(2)})`);
+    }
+  } else {
+    withBalance.sort((a, b) => compareMonthYear(a.Month, b.Month));
+  }
 
   let remaining = amount;
   const adjustments = [];
@@ -330,7 +342,7 @@ async function useSavings(doc, amount) {
       remaining -= deduct;
     }
   }
-  await addHistory(doc, 'useSavings', { amount, txId, adjustments });
+  await addHistory(doc, 'useSavings', { amount, month, txId, adjustments });
   return { transactionId: txId, adjustments };
 }
 
@@ -431,7 +443,7 @@ async function redoAction(doc, actionId) {
   switch (action.Type) {
     case 'requestMoney': await requestMoney(doc, details.amount); break;
     case 'newMonth': await processNewMonth(doc); break;
-    case 'useSavings': await useSavings(doc, details.amount); break;
+    case 'useSavings': await useSavings(doc, details.amount, details.month); break;
     case 'topUpSavings': await topUpSavings(doc, details.months, details.totalAmount); break;
     case 'setOffsets': await setOffsets(doc, details.wallet, details.savings); break;
     case 'addTransaction': await addTransaction(doc, details.type, details.amount, details.note); break;
