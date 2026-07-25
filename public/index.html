@@ -5,10 +5,15 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Allowance Manager</title>
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='48' fill='%23FBBF24'/><path d='M50 20 v60 M38 32 h16 a10 10 0 0 1 0 20 h-8 a10 10 0 0 0 0 20 h16' fill='none' stroke='%230F172A' stroke-width='10' stroke-linecap='round' stroke-linejoin='round'/></svg>">
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#FBBF24">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/lucide@latest"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script>
     tailwind.config = {
       darkMode: 'class',
@@ -243,10 +248,32 @@
         </header>
 
         <!-- Workspaces (Tabs Container) -->
-        <div class="flex-1 p-4 sm:p-8" id="workspaceContainer">
+        <div class="flex-1 p-4 pb-20 sm:p-8" id="workspaceContainer">
 
           <!-- TAB 1: Dashboard (Overview) -->
           <div id="view-dashboard" class="space-y-8">
+            <!-- Smart Insights Card -->
+            <div id="smartInsightsCard" class="bg-gradient-to-r from-amber-500/10 to-yellow-500/5 dark:from-amber-950/20 dark:to-yellow-950/10 border border-amber-500/30 rounded-3xl p-6 shadow-lg shadow-amber-500/5 relative overflow-hidden flex flex-col md:flex-row md:items-center justify-between gap-6 transition-all duration-300">
+              <div class="absolute -right-16 -top-16 w-44 h-44 bg-amber-400/10 rounded-full blur-3xl pointer-events-none"></div>
+              <div class="flex-1 space-y-4">
+                <div class="flex items-center gap-2">
+                  <span class="p-2 bg-amber-500/20 text-amber-500 rounded-xl">
+                    <i data-lucide="sparkles" class="w-5 h-5"></i>
+                  </span>
+                  <div>
+                    <h3 class="text-base font-bold text-slate-900 dark:text-white">Smart Insights</h3>
+                    <p class="text-xs text-amber-600 dark:text-amber-400 font-medium">Real-time analytical metrics derived from your allowance activity</p>
+                  </div>
+                </div>
+                <div class="space-y-3" id="insightsContent">
+                  <div class="flex items-center gap-2.5 text-xs text-slate-500 dark:text-slate-400 animate-pulse">
+                    <div class="w-2 h-2 rounded-full bg-amber-400"></div>
+                    <div class="h-4 bg-slate-200 dark:bg-slate-700 rounded w-64"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
             <!-- Top Metrics Summary Cards -->
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div id="mamaCard" class="bg-white dark:bg-brand-dark-card rounded-3xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm relative overflow-hidden group hover:shadow-md transition-all">
@@ -460,6 +487,28 @@
               <h2 class="text-2xl font-bold text-slate-900 dark:text-white">Spending Analytics</h2>
               <p class="text-sm text-slate-500 dark:text-slate-400">Graphical analysis of wallet distributions and monthly records</p>
             </div>
+
+            <!-- Generate Monthly Financial Report Card -->
+            <div class="bg-gradient-to-r from-indigo-500/10 to-purple-500/5 dark:from-indigo-950/20 dark:to-purple-950/10 border border-indigo-500/30 rounded-3xl p-6 shadow-lg shadow-indigo-500/5 flex flex-col md:flex-row md:items-center justify-between gap-6 transition-all duration-300">
+              <div class="flex items-center gap-3">
+                <div class="p-3 bg-indigo-500/20 text-indigo-500 rounded-2xl">
+                  <i data-lucide="file-text" class="w-6 h-6"></i>
+                </div>
+                <div>
+                  <h3 class="text-base font-bold text-slate-900 dark:text-white">Monthly Financial Report</h3>
+                  <p class="text-xs text-slate-500 dark:text-slate-400">Generate and download a beautiful, print-ready PDF containing category pie charts, month-by-month tables, and bank details.</p>
+                </div>
+              </div>
+              <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full md:w-auto">
+                <select id="reportMonthSelect" class="px-4 py-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl text-xs text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-indigo-500 min-w-[150px]">
+                  <!-- Will populate dynamically with months -->
+                </select>
+                <button onclick="generateMonthlyPDFReport()" class="px-5 py-2.5 bg-indigo-500 hover:bg-indigo-600 text-white font-bold rounded-xl shadow-md transition-all flex items-center justify-center gap-2 text-xs">
+                  <i data-lucide="printer" class="w-4 h-4"></i> Generate PDF
+                </button>
+              </div>
+            </div>
+
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
               <div class="bg-white dark:bg-brand-dark-card rounded-3xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm">
                 <h3 class="text-sm font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-6">Expenses by Category</h3>
@@ -549,16 +598,58 @@
             <div class="bg-white dark:bg-brand-dark-card rounded-3xl p-6 sm:p-8 border border-slate-200 dark:border-slate-800 shadow-sm space-y-6 w-full">
               <!-- Tactile Sound Effects Setting -->
               <div>
-                <h3 class="text-base font-bold text-slate-900 dark:text-white mb-2">Tactile Feedback Sounds</h3>
-                <p class="text-xs text-slate-400 dark:text-slate-500 mb-4">Mute or unmute premium button click and chime sounds.</p>
-                <div class="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-900/60 rounded-2xl border border-slate-200 dark:border-slate-800">
-                  <span class="text-sm font-semibold text-slate-700 dark:text-slate-200 flex items-center gap-2">
-                    <i id="muteIcon" data-lucide="volume-2" class="w-5 h-5 text-amber-500"></i> <span id="soundLabelText">Sound Effects Enabled</span>
-                  </span>
-                  <label class="relative inline-flex items-center cursor-pointer">
-                    <input type="checkbox" id="muteToggle" onchange="toggleMuteState()" class="sr-only peer" checked>
-                    <div class="w-11 h-6 bg-slate-200 dark:bg-slate-800 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-slate-600 peer-checked:bg-amber-500"></div>
-                  </label>
+                <h3 class="text-base font-bold text-slate-900 dark:text-white mb-2">Preferences & Personalization</h3>
+                <p class="text-xs text-slate-400 dark:text-slate-500 mb-4">Configure premium UI sounds and dynamic theme behaviors.</p>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <!-- Sound effects toggle -->
+                  <div class="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-900/60 rounded-2xl border border-slate-200 dark:border-slate-800">
+                    <span class="text-sm font-semibold text-slate-700 dark:text-slate-200 flex items-center gap-2">
+                      <i id="muteIcon" data-lucide="volume-2" class="w-5 h-5 text-amber-500"></i> <span id="soundLabelText">Sound Effects Enabled</span>
+                    </span>
+                    <label class="relative inline-flex inline-block cursor-pointer">
+                      <input type="checkbox" id="muteToggle" onchange="toggleMuteState()" class="sr-only peer" checked>
+                      <div class="w-11 h-6 bg-slate-200 dark:bg-slate-800 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-slate-600 peer-checked:bg-amber-500"></div>
+                    </label>
+                  </div>
+
+                  <!-- Location Dark Mode Toggle -->
+                  <div class="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-900/60 rounded-2xl border border-slate-200 dark:border-slate-800">
+                    <span class="text-sm font-semibold text-slate-700 dark:text-slate-200 flex items-center gap-2">
+                      <i id="locationDarkIcon" data-lucide="map-pin" class="w-5 h-5 text-amber-500"></i> <span id="locationDarkLabelText">Auto Dark Mode (Location)</span>
+                    </span>
+                    <label class="relative inline-flex inline-block cursor-pointer">
+                      <input type="checkbox" id="locationDarkToggle" onchange="toggleLocationDarkMode()" class="sr-only peer">
+                      <div class="w-11 h-6 bg-slate-200 dark:bg-slate-800 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-slate-600 peer-checked:bg-amber-500"></div>
+                    </label>
+                  </div>
+                </div>
+              </div>
+
+              <div class="h-px bg-slate-150 dark:bg-slate-800 my-4"></div>
+
+              <div>
+                <h3 class="text-base font-bold text-slate-900 dark:text-white mb-2">Configure Multi-Currency</h3>
+                <p class="text-xs text-slate-400 dark:text-slate-500 mb-4">Set your primary currency to automatically display card statistics, diagram values, goals, and history tables in your currency of choice.</p>
+              </div>
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                <div>
+                  <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">Display/Primary Currency</label>
+                  <select id="settingPrimaryCurrency" class="w-full px-4 py-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl focus:ring-2 focus:ring-brand-yellow focus:border-brand-yellow outline-none text-slate-900 dark:text-white">
+                    <option value="MYR">MYR (RM)</option>
+                    <option value="USD">USD ($)</option>
+                    <option value="SGD">SGD (S$)</option>
+                    <option value="EUR">EUR (€)</option>
+                    <option value="GBP">GBP (£)</option>
+                    <option value="JPY">JPY (¥)</option>
+                    <option value="AUD">AUD (A$)</option>
+                    <option value="CAD">CAD (C$)</option>
+                    <option value="CNY">CNY (¥)</option>
+                    <option value="INR">INR (₹)</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">Exchange Rate (1 MYR = ?)</label>
+                  <input type="text" id="settingExchangeRateText" readonly disabled class="w-full px-4 py-3 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-800 rounded-2xl text-slate-500 outline-none" placeholder="1.00">
                 </div>
               </div>
 
@@ -653,8 +744,8 @@
   </div>
 
   <!-- MODALS -->
-  <div id="newMonthModal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm hidden">
-    <div class="bg-white dark:bg-brand-dark-card w-full max-w-md mx-4 p-6 rounded-3xl border border-slate-200 dark:border-slate-700 shadow-2xl relative">
+  <div id="newMonthModal" class="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-slate-900/60 backdrop-blur-sm hidden">
+    <div class="bg-white dark:bg-brand-dark-card w-full max-w-md mx-0 sm:mx-4 p-6 rounded-t-[2.5rem] sm:rounded-3xl border border-slate-200 dark:border-slate-700 shadow-2xl relative">
       <h3 class="text-lg font-bold text-slate-900 dark:text-white mb-2">Process New Month</h3>
       <form onsubmit="event.preventDefault(); submitProcessNewMonth();" class="space-y-4">
         <div>
@@ -695,8 +786,8 @@
     </div>
   </div>
 
-  <div id="addExpenseModal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm hidden">
-    <div class="bg-white dark:bg-brand-dark-card w-full max-w-md mx-4 p-6 rounded-3xl border border-slate-200 dark:border-slate-700 shadow-2xl relative">
+  <div id="addExpenseModal" class="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-slate-900/60 backdrop-blur-sm hidden">
+    <div class="bg-white dark:bg-brand-dark-card w-full max-w-md mx-0 sm:mx-4 p-6 rounded-t-[2.5rem] sm:rounded-3xl border border-slate-200 dark:border-slate-700 shadow-2xl relative">
       <h3 class="text-lg font-bold text-slate-900 dark:text-white mb-2">Add New Expense</h3>
       <form onsubmit="event.preventDefault(); submitAddExpense();" class="space-y-4">
         <select id="expenseType" class="w-full px-4 py-3 bg-slate-50 dark:bg-slate-900 border rounded-2xl">
@@ -706,6 +797,26 @@
         </select>
         <input type="number" id="expenseAmount" step="0.01" required placeholder="0.00" class="w-full px-4 py-3 bg-slate-50 dark:bg-slate-900 border rounded-2xl">
         <input type="text" id="expenseNote" required placeholder="Note" class="w-full px-4 py-3 bg-slate-50 dark:bg-slate-900 border rounded-2xl">
+
+        <!-- Receipt/Attachment Upload -->
+        <div class="space-y-2">
+          <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Receipt / Attachment (Optional)</label>
+          <div class="flex items-center gap-3">
+            <label for="expenseAttachment" class="flex items-center gap-2 px-4 py-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-xl cursor-pointer transition-all text-xs font-bold border border-slate-200 dark:border-slate-700">
+              <i data-lucide="camera" class="w-4 h-4 text-amber-500"></i> Choose Image
+            </label>
+            <input type="file" id="expenseAttachment" onchange="previewAttachment(event)" accept="image/*" class="hidden">
+            <span id="attachmentFileName" class="text-xs text-slate-400 truncate max-w-[180px]">No file selected</span>
+          </div>
+          <!-- Thumbnail preview -->
+          <div id="attachmentPreviewContainer" class="hidden relative inline-block mt-2">
+            <img id="attachmentThumbnail" class="max-h-[100px] rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm" src="">
+            <button type="button" onclick="clearAttachment()" class="absolute -top-2 -right-2 p-1 bg-red-500 text-white rounded-full hover:bg-red-600 shadow-md">
+              <i data-lucide="x" class="w-3 h-3"></i>
+            </button>
+          </div>
+        </div>
+
         <div class="flex gap-3">
           <button type="button" onclick="closeAddExpenseModal()" class="flex-1 py-3 bg-slate-100 dark:bg-slate-800 rounded-2xl">Cancel</button>
           <button type="submit" class="flex-1 py-3 bg-brand-yellow rounded-2xl font-bold">Submit</button>
@@ -714,8 +825,8 @@
     </div>
   </div>
 
-  <div id="requestTransferModal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm hidden">
-    <div class="bg-white dark:bg-brand-dark-card w-full max-w-md mx-4 p-6 rounded-3xl border shadow-2xl">
+  <div id="requestTransferModal" class="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-slate-900/60 backdrop-blur-sm hidden">
+    <div class="bg-white dark:bg-brand-dark-card w-full max-w-md mx-0 sm:mx-4 p-6 rounded-t-[2.5rem] sm:rounded-3xl border shadow-2xl">
       <h3 class="text-lg font-bold mb-2">Request Custodian Transfer</h3>
       <form onsubmit="event.preventDefault(); submitRequestTransfer();" class="space-y-4">
         <input type="number" id="transferAmount" step="0.01" required placeholder="0.00" class="w-full px-4 py-3 bg-slate-50 dark:bg-slate-900 border rounded-2xl">
@@ -727,8 +838,8 @@
     </div>
   </div>
 
-  <div id="useSavingsModal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm hidden">
-    <div class="bg-white dark:bg-brand-dark-card w-full max-w-md mx-4 p-6 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-2xl relative">
+  <div id="useSavingsModal" class="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-slate-900/60 backdrop-blur-sm hidden">
+    <div class="bg-white dark:bg-brand-dark-card w-full max-w-md mx-0 sm:mx-4 p-6 rounded-t-[2.5rem] sm:rounded-3xl border border-slate-200 dark:border-slate-800 shadow-2xl relative">
       <h3 class="text-lg font-bold text-slate-900 dark:text-white mb-2">Withdraw / Use Savings</h3>
       <form onsubmit="event.preventDefault(); submitUseSavings();" class="space-y-4">
         <div>
@@ -748,8 +859,8 @@
     </div>
   </div>
 
-  <div id="topUpSavingsModal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm hidden">
-    <div class="bg-white dark:bg-brand-dark-card w-full max-w-md mx-4 p-6 rounded-3xl border shadow-2xl">
+  <div id="topUpSavingsModal" class="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-slate-900/60 backdrop-blur-sm hidden">
+    <div class="bg-white dark:bg-brand-dark-card w-full max-w-md mx-0 sm:mx-4 p-6 rounded-t-[2.5rem] sm:rounded-3xl border shadow-2xl">
       <h3 class="text-lg font-bold mb-2">Top Up Savings</h3>
       <form onsubmit="event.preventDefault(); submitTopUpSavings();" class="space-y-4">
         <select id="topUpMonthSelect" class="w-full px-4 py-3 bg-slate-50 dark:bg-slate-900 border rounded-2xl"></select>
@@ -885,6 +996,32 @@
     let token = null;
     let dashboardData = null;
     let historyData = [];
+
+    let currentCurrency = 'MYR';
+    let currencyRates = { MYR: 1 };
+    const CURRENCY_SYMBOLS = {
+      MYR: 'RM',
+      USD: '$',
+      SGD: 'S$',
+      EUR: '€',
+      GBP: '£',
+      JPY: '¥',
+      AUD: 'A$',
+      CAD: 'C$',
+      CNY: '¥',
+      INR: '₹'
+    };
+
+    function getConvertedAmount(amountInMYR) {
+      const rate = currencyRates[currentCurrency] || 1;
+      return amountInMYR * rate;
+    }
+
+    function formatMoney(amountInMYR) {
+      const converted = getConvertedAmount(amountInMYR);
+      const symbol = CURRENCY_SYMBOLS[currentCurrency] || currentCurrency;
+      return `${symbol}${converted.toFixed(2)}`;
+    }
     let transactionData = [];
     let undoStack = [];
     let redoStack = [];
@@ -1046,16 +1183,43 @@
         document.getElementById(`view-${v}`).classList.add('hidden');
         const btn = document.getElementById(`tabBtn-${v}`);
         if (btn) btn.className = "nav-tab w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-medium transition-all duration-150 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800";
+
+        const mBtn = document.getElementById(`mobileTabBtn-${v}`);
+        if (mBtn) mBtn.className = "flex flex-col items-center gap-1 text-slate-500 hover:text-amber-500 transition-colors py-1 px-3 w-16 h-12 justify-center";
       });
       document.getElementById(`view-${tabId}`).classList.remove('hidden');
       const activeBtn = document.getElementById(`tabBtn-${tabId}`);
       if (activeBtn) activeBtn.className = "nav-tab w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-semibold transition-all duration-150 bg-brand-yellow text-slate-950 shadow-md";
+
+      const activeMBtn = document.getElementById(`mobileTabBtn-${tabId}`);
+      if (activeMBtn) activeMBtn.className = "flex flex-col items-center gap-1 text-amber-500 hover:text-amber-600 transition-colors py-1 px-3 w-16 h-12 justify-center";
+
       if (tabId === 'history') renderHistoryPage();
       else if (tabId === 'transactions') renderTransactionsPage();
       else if (tabId === 'transfers') renderTransfersPage();
       else if (tabId === 'analytics') renderAnalyticsPage();
 
       toggleSidebar(false);
+    }
+
+    function toggleMobileMoreMenu(open) {
+      playSoftClick();
+      const menu = document.getElementById('mobileMoreMenu');
+      if (!menu) return;
+      const isHidden = menu.classList.contains('hidden');
+      const shouldOpen = open !== undefined ? open : isHidden;
+
+      if (shouldOpen) {
+        menu.classList.remove('hidden');
+        setTimeout(() => {
+          menu.classList.remove('translate-y-full');
+        }, 10);
+      } else {
+        menu.classList.add('translate-y-full');
+        setTimeout(() => {
+          menu.classList.add('hidden');
+        }, 300);
+      }
     }
 
     function copyToClipboard(text, elementId) {
@@ -1083,7 +1247,213 @@
       else if (mode === 'dark') { document.documentElement.classList.add('dark'); dark.classList.add('bg-slate-800','text-amber-500','shadow-sm'); localStorage.setItem('theme','dark'); }
       else { localStorage.removeItem('theme'); sys.classList.add('bg-white','dark:bg-slate-800','text-amber-500','shadow-sm'); document.documentElement.classList.toggle('dark', window.matchMedia('(prefers-color-scheme: dark)').matches); }
     }
-    (localStorage.getItem('theme') ? setTheme(localStorage.getItem('theme')) : setTheme('system'));
+
+    if (localStorage.getItem('auto_dark_mode_location') === 'true') {
+      // handled by initLocationDarkMode
+    } else if (localStorage.getItem('theme')) {
+      setTheme(localStorage.getItem('theme'));
+    } else {
+      setTheme('system');
+    }
+
+    function generateSmartInsights() {
+      const contentEl = document.getElementById('insightsContent');
+      if (!contentEl || !dashboardData || !transactionData) return;
+
+      const now = new Date();
+      const curYear = now.getFullYear();
+      const curMonth = now.getMonth();
+
+      const refillsThisMonth = transactionData.filter(t => {
+        if (t.type !== 'refill') return false;
+        const d = new Date(t.date);
+        return d.getFullYear() === curYear && d.getMonth() === curMonth;
+      }).reduce((sum, t) => sum + Number(t.amount), 0);
+
+      let prevMonth = curMonth - 1;
+      let prevYear = curYear;
+      if (prevMonth < 0) {
+        prevMonth = 11;
+        prevYear--;
+      }
+
+      const refillsPrevMonth = transactionData.filter(t => {
+        if (t.type !== 'refill') return false;
+        const d = new Date(t.date);
+        return d.getFullYear() === prevYear && d.getMonth() === prevMonth;
+      }).reduce((sum, t) => sum + Number(t.amount), 0);
+
+      const insights = [];
+
+      if (refillsPrevMonth > 0) {
+        const diff = refillsThisMonth - refillsPrevMonth;
+        const percent = Math.abs(Math.round((diff / refillsPrevMonth) * 100));
+        if (diff > 0) {
+          insights.push(`You spent <span class="font-bold text-amber-500">${percent}% more</span> on refills this month (${formatMoney(refillsThisMonth)}) compared to last month (${formatMoney(refillsPrevMonth)}).`);
+        } else if (diff < 0) {
+          insights.push(`Great job! You spent <span class="font-bold text-emerald-500">${percent}% less</span> on refills this month (${formatMoney(refillsThisMonth)}) compared to last month (${formatMoney(refillsPrevMonth)}).`);
+        } else {
+          insights.push(`Your refill spending is exactly the same as last month (${formatMoney(refillsThisMonth)}).`);
+        }
+      } else {
+        insights.push(`You spent <span class="font-bold text-slate-700 dark:text-slate-300">${formatMoney(refillsThisMonth)}</span> on refills this month. Continue tracking to see next month's comparisons!`);
+      }
+
+      const stats = dashboardData.allowanceStats;
+      let savingsRatePercent = 0;
+      if (stats && stats.length > 0) {
+        const sorted = [...stats].sort((a,b) => {
+          const pa = parseMonthYearLabel(a.month);
+          const pb = parseMonthYearLabel(b.month);
+          return pb.year - pa.year || pb.monthNum - pa.monthNum;
+        });
+        const latestMonth = sorted[0];
+        const allowanceVal = latestMonth.allowance || 430;
+        const savingsVal = latestMonth.savings || 30;
+        savingsRatePercent = Math.round((savingsVal / allowanceVal) * 100);
+      }
+
+      if (savingsRatePercent > 0) {
+        if (savingsRatePercent < 20) {
+          insights.push(`Your savings rate is <span class="font-bold text-amber-500">${savingsRatePercent}%</span> – try to reach 20% next month.`);
+        } else {
+          insights.push(`Your savings rate is <span class="font-bold text-emerald-500">${savingsRatePercent}%</span> – excellent habit! Keep it up.`);
+        }
+      } else {
+        insights.push(`Your savings rate is currently 0% – start saving some allowance this month to build your vault!`);
+      }
+
+      const currentMama = dashboardData.mamaAccount;
+      if (currentMama < 50) {
+        insights.push(`Alert: Your Mama Account balance (${formatMoney(currentMama)}) is low! Hold off on unnecessary refill requests.`);
+      } else {
+        insights.push(`Your Mama Account holding is healthy at ${formatMoney(currentMama)}. Excellent fund stewardship.`);
+      }
+
+      contentEl.innerHTML = insights.map(ins => `
+        <div class="flex items-start gap-2.5 text-xs text-slate-600 dark:text-slate-300">
+          <div class="w-1.5 h-1.5 rounded-full bg-amber-500 mt-1.5 flex-shrink-0"></div>
+          <p>${ins}</p>
+        </div>
+      `).join('');
+    }
+
+    let checkThemeInterval = null;
+
+    function initLocationDarkMode() {
+      const toggle = document.getElementById('locationDarkToggle');
+      const isEnabled = localStorage.getItem('auto_dark_mode_location') === 'true';
+      if (toggle) {
+        toggle.checked = isEnabled;
+      }
+
+      if (isEnabled) {
+        runLocationDarkMode();
+        if (!checkThemeInterval) {
+          checkThemeInterval = setInterval(runLocationDarkMode, 60000);
+        }
+      } else {
+        if (checkThemeInterval) {
+          clearInterval(checkThemeInterval);
+          checkThemeInterval = null;
+        }
+        if (!localStorage.getItem('theme')) {
+          runTimeBasedFallback();
+        }
+      }
+    }
+
+    function toggleLocationDarkMode() {
+      playSoftClick();
+      const toggle = document.getElementById('locationDarkToggle');
+      if (!toggle) return;
+
+      const enabled = toggle.checked;
+      localStorage.setItem('auto_dark_mode_location', enabled ? 'true' : 'false');
+
+      if (enabled) {
+        showToast('Auto Dark Mode by Location enabled', 'success');
+        runLocationDarkMode();
+        if (!checkThemeInterval) {
+          checkThemeInterval = setInterval(runLocationDarkMode, 60000);
+        }
+      } else {
+        showToast('Auto Dark Mode by Location disabled', 'info');
+        if (checkThemeInterval) {
+          clearInterval(checkThemeInterval);
+          checkThemeInterval = null;
+        }
+        if (!localStorage.getItem('theme')) {
+          runTimeBasedFallback();
+        } else {
+          setTheme(localStorage.getItem('theme'));
+        }
+      }
+    }
+
+    function runTimeBasedFallback() {
+      const currentHour = new Date().getHours();
+      if (currentHour >= 7 && currentHour < 19) {
+        setTheme('light');
+      } else {
+        setTheme('dark');
+      }
+    }
+
+    async function runLocationDarkMode() {
+      if (!navigator.geolocation) {
+        console.warn('Geolocation not supported, falling back to time-based.');
+        runTimeBasedFallback();
+        return;
+      }
+
+      navigator.geolocation.getCurrentPosition(async (position) => {
+        const lat = position.coords.latitude;
+        const lng = position.coords.longitude;
+
+        try {
+          const cacheKey = `sunrise_sunset_${lat.toFixed(2)}_${lng.toFixed(2)}`;
+          let data = null;
+          const cached = localStorage.getItem(cacheKey);
+          const cacheTime = localStorage.getItem(`${cacheKey}_time`);
+          const now = Date.now();
+
+          if (cached && cacheTime && (now - Number(cacheTime) < 3600000)) {
+            data = JSON.parse(cached);
+          } else {
+            const res = await fetch(`https://api.sunrise-sunset.org/json?lat=${lat}&lng=${lng}&formatted=0`);
+            if (res.ok) {
+              const json = await res.json();
+              if (json && json.results) {
+                data = json.results;
+                localStorage.setItem(cacheKey, JSON.stringify(data));
+                localStorage.setItem(`${cacheKey}_time`, now.toString());
+              }
+            }
+          }
+
+          if (data) {
+            const sunrise = new Date(data.sunrise);
+            const sunset = new Date(data.sunset);
+            const currentDate = new Date();
+
+            if (currentDate >= sunrise && currentDate < sunset) {
+              setTheme('light');
+            } else {
+              setTheme('dark');
+            }
+          } else {
+            runTimeBasedFallback();
+          }
+        } catch (e) {
+          console.error('Error fetching sunset/sunrise times:', e);
+          runTimeBasedFallback();
+        }
+      }, (error) => {
+        console.warn('Geolocation permission denied or error. Falling back to time-based logic.');
+        runTimeBasedFallback();
+      });
+    }
 
     // ----- Toggle Sound Mute State -----
     function toggleMuteState() {
@@ -1177,6 +1547,10 @@
           fetch(`${API}?action=getHistory`, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({token})})
         ]);
         dashboardData = await dashRes.json();
+        if (dashboardData && dashboardData.currencySettings) {
+          currentCurrency = dashboardData.currencySettings.selected_currency || 'MYR';
+          currencyRates = dashboardData.currencySettings.rates || { MYR: 1 };
+        }
         transactionData = await txRes.json();
         historyData = await histRes.json();
         historyData.sort((a,b) => new Date(a.timestamp) - new Date(b.timestamp));
@@ -1194,8 +1568,15 @@
       const el = document.getElementById(elementId);
       if (!el) return;
 
+      let finalVal = targetValue;
+      let finalPrefix = prefix;
+      if (prefix === 'RM' || prefix === 'RM ') {
+        finalVal = getConvertedAmount(targetValue);
+        finalPrefix = CURRENCY_SYMBOLS[currentCurrency] || currentCurrency;
+      }
+
       const previousValue = parseFloat(el.getAttribute('data-val')) || 0;
-      el.setAttribute('data-val', targetValue);
+      el.setAttribute('data-val', finalVal);
 
       const startTime = performance.now();
 
@@ -1203,14 +1584,14 @@
         const elapsed = now - startTime;
         const progress = Math.min(elapsed / duration, 1);
         const ease = progress * (2 - progress); // Ease out quad
-        const currentValue = previousValue + (targetValue - previousValue) * ease;
+        const currentValue = previousValue + (finalVal - previousValue) * ease;
 
-        el.textContent = `${prefix}${currentValue.toFixed(2)}${suffix}`;
+        el.textContent = `${finalPrefix}${currentValue.toFixed(2)}${suffix}`;
 
         if (progress < 1) {
           requestAnimationFrame(update);
         } else {
-          el.textContent = `${prefix}${targetValue.toFixed(2)}${suffix}`;
+          el.textContent = `${finalPrefix}${finalVal.toFixed(2)}${suffix}`;
         }
       }
       requestAnimationFrame(update);
@@ -1241,8 +1622,20 @@
         document.getElementById('settingSavingsGoal').value = dashboardData.alertSettings.savings_goal;
       }
 
+      if (document.getElementById('settingPrimaryCurrency')) {
+        document.getElementById('settingPrimaryCurrency').value = currentCurrency;
+      }
+      if (document.getElementById('settingExchangeRateText')) {
+        const rate = currencyRates[currentCurrency] || 1;
+        document.getElementById('settingExchangeRateText').value = rate.toFixed(4);
+      }
+
       const topUpSelect = document.getElementById('topUpMonthSelect');
-      topUpSelect.innerHTML = dashboardData.savingsStats.map(s => `<option value="${s.month}">${s.month} (Used: RM${(s.usage||0).toFixed(2)})</option>`).join('');
+      topUpSelect.innerHTML = dashboardData.savingsStats.map(s => `<option value="${s.month}">${s.month} (Used: ${formatMoney(s.usage||0)})</option>`).join('');
+
+      if (document.getElementById('reportMonthSelect')) {
+        document.getElementById('reportMonthSelect').innerHTML = dashboardData.allowanceStats.map(s => `<option value="${s.month}">${s.month}</option>`).join('');
+      }
 
       document.getElementById('topUndoBtn').disabled = (undoStack.length === 0);
       document.getElementById('topRedoBtn').disabled = (redoStack.length === 0);
@@ -1268,13 +1661,13 @@
               <span class="date-text">${displayDate}</span>
             </span>
           </td>
-          <td class="py-3 font-semibold">RM${(s.allowance||430).toFixed(2)}</td>
-          <td class="py-3 text-red-500 font-semibold">RM${(s.usage||0).toFixed(2)}</td>
-          <td class="py-3 text-emerald-500 font-bold">RM${(s.balance||0).toFixed(2)}</td>
+          <td class="py-3 font-semibold">${formatMoney(s.allowance||430)}</td>
+          <td class="py-3 text-red-500 font-semibold">${formatMoney(s.usage||0)}</td>
+          <td class="py-3 text-emerald-500 font-bold">${formatMoney(s.balance||0)}</td>
         </tr>`;
       }).join('');
       document.getElementById('savingsStatsTbody').innerHTML = dashboardData.savingsStats.map(s => `
-        <tr class="border-b"><td class="py-3 font-medium">${s.month}</td><td class="py-3 font-semibold">RM${(s.savings||30).toFixed(2)}</td><td class="py-3 text-red-400">RM${(s.usage||0).toFixed(2)}</td><td class="py-3 text-emerald-500 font-bold">RM${(s.balance||0).toFixed(2)}</td></tr>`).join('');
+        <tr class="border-b"><td class="py-3 font-medium">${s.month}</td><td class="py-3 font-semibold">${formatMoney(s.savings||30)}</td><td class="py-3 text-red-400">${formatMoney(s.usage||0)}</td><td class="py-3 text-emerald-500 font-bold">${formatMoney(s.balance||0)}</td></tr>`).join('');
 
       // Update Savings Goal Progress
       if (dashboardData.alertSettings) {
@@ -1283,11 +1676,12 @@
         const percent = Math.min(Math.round((current / goal) * 100), 100);
         document.getElementById('goalPercentText').textContent = `${percent}%`;
         document.getElementById('goalProgressBar').style.width = `${percent}%`;
-        document.getElementById('goalCurrentText').textContent = `RM${current.toFixed(2)}`;
-        document.getElementById('goalTargetText').textContent = `RM${goal.toFixed(2)}`;
+        document.getElementById('goalCurrentText').textContent = formatMoney(current);
+        document.getElementById('goalTargetText').textContent = formatMoney(goal);
       }
 
       checkBudgetThresholds();
+      generateSmartInsights();
       lucide.createIcons();
     }
 
@@ -1334,10 +1728,10 @@
       // Show toast if not already shown this session
       if (!alertToastsShown) {
         if (mamaBelow) {
-          showToast(`Mama Account balance (RM${mamaVal.toFixed(2)}) is below warning threshold of RM${mamaThreshold.toFixed(2)}!`, 'warning');
+          showToast(`Mama Account balance (${formatMoney(mamaVal)}) is below warning threshold of ${formatMoney(mamaThreshold)}!`, 'warning');
         }
         if (savingsBelow) {
-          showToast(`Savings balance (RM${savingsVal.toFixed(2)}) is below warning threshold of RM${savingsThreshold.toFixed(2)}!`, 'warning');
+          showToast(`Savings balance (${formatMoney(savingsVal)}) is below warning threshold of ${formatMoney(savingsThreshold)}!`, 'warning');
         }
         alertToastsShown = true;
       }
@@ -1429,8 +1823,13 @@
             </div>
           </div>
           <div class="flex items-center gap-4">
+            ${(t.attachment && t.attachment.trim() !== '') ? `
+            <button onclick="openReceiptLightbox('${t.id}')" class="p-2 text-amber-500 hover:text-amber-600 dark:hover:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-950/20 rounded-xl transition-all" title="View Receipt">
+              <i data-lucide="paperclip" class="w-4 h-4"></i>
+            </button>
+            ` : ''}
             <span class="text-sm font-extrabold ${isOut?'text-red-500':'text-emerald-500'}">
-              ${isOut?'-':'+'}RM${t.amount.toFixed(2)}
+              ${isOut?'-':'+'}${formatMoney(t.amount)}
             </span>
             <button onclick="openDeleteTransactionModal('${t.id}')" class="p-2 text-red-400 hover:text-red-600 dark:hover:text-red-400/80 hover:bg-red-50 dark:hover:bg-red-950/20 rounded-xl transition-all" title="Delete Transaction">
               <i data-lucide="trash-2" class="w-4 h-4"></i>
@@ -1443,7 +1842,225 @@
 
     function renderTransfersPage() {
       const refills = transactionData.filter(t => t.type === 'refill');
-      document.getElementById('transferHistoryTbody').innerHTML = refills.length ? refills.map(t => `<tr class="border-b"><td class="py-3">${new Date(t.date).toLocaleDateString('en-GB')}</td><td class="py-3 uppercase text-xs font-bold">Transfer</td><td class="py-3 font-extrabold">RM${t.amount.toFixed(2)}</td><td class="py-3 text-xs">${t.note||''}</td></tr>`).join('') : '<tr><td colspan="4" class="py-4 text-center text-xs">No transfers</td></tr>';
+      document.getElementById('transferHistoryTbody').innerHTML = refills.length ? refills.map(t => `<tr class="border-b"><td class="py-3">${new Date(t.date).toLocaleDateString('en-GB')}</td><td class="py-3 uppercase text-xs font-bold">Transfer</td><td class="py-3 font-extrabold">${formatMoney(t.amount)}</td><td class="py-3 text-xs">${t.note||''}</td></tr>`).join('') : '<tr><td colspan="4" class="py-4 text-center text-xs">No transfers</td></tr>';
+    }
+
+    async function generateMonthlyPDFReport() {
+      playChime();
+      const selectMonth = document.getElementById('reportMonthSelect').value;
+      if (!selectMonth) {
+        showToast('Please select a valid month.', 'error');
+        return;
+      }
+
+      showToast('Generating your monthly financial report PDF...', 'info');
+
+      try {
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF('p', 'pt', 'a4');
+
+        const primaryColor = '#4F46E5'; // Indigo
+        const slateColor = '#1E293B';
+        const lightGray = '#F1F5F9';
+        const darkGray = '#475569';
+
+        // 1. HEADER
+        doc.setFillColor(79, 70, 229);
+        doc.rect(0, 0, 595, 80, 'F');
+
+        doc.setTextColor(255, 255, 255);
+        doc.setFont('Helvetica', 'bold');
+        doc.setFontSize(22);
+        doc.text('Allowance Manager', 40, 48);
+
+        doc.setFont('Helvetica', 'normal');
+        doc.setFontSize(10);
+        doc.text('Monthly Financial Report', 40, 63);
+
+        doc.setFontSize(12);
+        doc.setFont('Helvetica', 'bold');
+        doc.text(selectMonth.toUpperCase(), 450, 48);
+
+        // 2. METRICS
+        doc.setTextColor(slateColor);
+        doc.setFontSize(14);
+        doc.setFont('Helvetica', 'bold');
+        doc.text('Monthly Performance Metrics', 40, 115);
+
+        const mStat = dashboardData.allowanceStats.find(s => s.month === selectMonth) || {};
+        const allowanceAmount = mStat.allowance || 430;
+        const usageAmount = mStat.usage || 0;
+        const remainingAmount = mStat.balance || 0;
+        const savingsAmount = mStat.savings || 30;
+
+        doc.setDrawColor(226, 232, 240);
+        doc.setFillColor(248, 250, 252);
+        doc.roundedRect(40, 130, 515, 60, 8, 8, 'FD');
+
+        doc.setFontSize(9);
+        doc.setTextColor(darkGray);
+        doc.setFont('Helvetica', 'normal');
+        doc.text('Allowance Allocation', 60, 153);
+        doc.text('Expenses/Refills', 190, 153);
+        doc.text('Monthly Savings', 320, 153);
+        doc.text('Mama Vault Balance', 440, 153);
+
+        doc.setFontSize(12);
+        doc.setFont('Helvetica', 'bold');
+        doc.setTextColor(slateColor);
+        doc.text(formatMoney(allowanceAmount), 60, 172);
+        doc.setTextColor(239, 68, 68);
+        doc.text(formatMoney(usageAmount), 190, 172);
+        doc.setTextColor(16, 185, 129);
+        doc.text(formatMoney(savingsAmount), 320, 172);
+        doc.setTextColor(primaryColor);
+        doc.text(formatMoney(remainingAmount), 440, 172);
+
+        // 3. PIE CHART GENERATION
+        const refillsVal = getConvertedAmount(usageAmount);
+        const savingsVal = getConvertedAmount(savingsAmount);
+        const remainingVal = getConvertedAmount(remainingAmount);
+
+        const chartCanvas = document.createElement('canvas');
+        chartCanvas.width = 300;
+        chartCanvas.height = 300;
+        chartCanvas.style.position = 'absolute';
+        chartCanvas.style.left = '-9999px';
+        document.body.appendChild(chartCanvas);
+
+        const chartCtx = chartCanvas.getContext('2d');
+        const tempChart = new Chart(chartCtx, {
+          type: 'pie',
+          data: {
+            labels: ['Usage/Refills', 'Savings', 'Remaining'],
+            datasets: [{
+              data: [refillsVal, savingsVal, remainingVal],
+              backgroundColor: ['#EF4444', '#10B981', '#4F46E5']
+            }]
+          },
+          options: {
+            animation: false,
+            responsive: false,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: { position: 'bottom' }
+            }
+          }
+        });
+
+        await new Promise(r => setTimeout(r, 150));
+
+        const chartImgData = chartCanvas.toDataURL('image/png');
+        tempChart.destroy();
+        document.body.removeChild(chartCanvas);
+
+        doc.setTextColor(slateColor);
+        doc.setFontSize(14);
+        doc.setFont('Helvetica', 'bold');
+        doc.text('Spending Category Distribution', 40, 215);
+        doc.addImage(chartImgData, 'PNG', 147, 230, 300, 150);
+
+        // 4. TRANSACTION LOG TABLE
+        doc.setFontSize(14);
+        doc.setFont('Helvetica', 'bold');
+        doc.text('Transaction Activity Ledger', 40, 410);
+
+        const { monthNum, year } = parseMonthYearLabel(selectMonth);
+        const filteredTx = transactionData.filter(t => {
+          const d = new Date(t.date);
+          return d.getFullYear() === year && d.getMonth() + 1 === monthNum;
+        });
+
+        doc.setFillColor(241, 245, 249);
+        doc.rect(40, 425, 515, 22, 'F');
+        doc.setFontSize(9);
+        doc.setFont('Helvetica', 'bold');
+        doc.setTextColor(darkGray);
+        doc.text('Date', 50, 439);
+        doc.text('Type', 150, 439);
+        doc.text('Amount', 250, 439);
+        doc.text('Note/Description', 350, 439);
+
+        let currentY = 460;
+        doc.setFont('Helvetica', 'normal');
+        doc.setTextColor(slateColor);
+
+        filteredTx.forEach((tx, index) => {
+          if (currentY > 740) {
+            doc.addPage();
+            currentY = 50;
+
+            doc.setFillColor(241, 245, 249);
+            doc.rect(40, currentY - 15, 515, 22, 'F');
+            doc.setFont('Helvetica', 'bold');
+            doc.setTextColor(darkGray);
+            doc.text('Date', 50, currentY - 1);
+            doc.text('Type', 150, currentY - 1);
+            doc.text('Amount', 250, currentY - 1);
+            doc.text('Note/Description', 350, currentY - 1);
+            doc.setFont('Helvetica', 'normal');
+            doc.setTextColor(slateColor);
+            currentY += 15;
+          }
+
+          const dateStr = new Date(tx.date).toLocaleDateString('en-GB');
+          const isOut = tx.type === 'refill' || tx.type === 'savings_usage';
+          const amtStr = (isOut ? '-' : '+') + formatMoney(tx.amount);
+
+          doc.text(dateStr, 50, currentY);
+          doc.text(tx.type.toUpperCase(), 150, currentY);
+
+          if (isOut) {
+            doc.setTextColor(220, 38, 38);
+          } else {
+            doc.setTextColor(16, 185, 129);
+          }
+          doc.text(amtStr, 250, currentY);
+          doc.setTextColor(slateColor);
+
+          const noteStr = tx.note || '';
+          const truncatedNote = noteStr.length > 25 ? noteStr.substring(0, 22) + '...' : noteStr;
+          doc.text(truncatedNote, 350, currentY);
+
+          doc.setDrawColor(241, 245, 249);
+          doc.line(40, currentY + 6, 555, currentY + 6);
+
+          currentY += 18;
+        });
+
+        // 5. BANK ACCOUNTS & FOOTER
+        doc.addPage();
+        currentY = 60;
+
+        doc.setTextColor(slateColor);
+        doc.setFontSize(14);
+        doc.setFont('Helvetica', 'bold');
+        doc.text('Configured Bank Details (Custodian)', 40, currentY);
+
+        currentY += 25;
+        doc.setFontSize(9);
+        doc.setFont('Helvetica', 'normal');
+        doc.setTextColor(darkGray);
+
+        dashboardData.bankAccounts.forEach(bank => {
+          doc.text(`${bank.name}: ${bank.number}`, 50, currentY);
+          currentY += 15;
+        });
+
+        doc.setDrawColor(226, 232, 240);
+        doc.line(40, 780, 555, 780);
+        doc.setFontSize(8);
+        doc.setTextColor(148, 163, 184);
+        doc.text('Allowance Manager - Generated on ' + new Date().toLocaleString(), 40, 795);
+        doc.text('Confidential - Admin Eyes Only', 450, 795);
+
+        const sanitizedMonth = selectMonth.replace(/\s+/g, '');
+        doc.save(`Allowance_Report_${sanitizedMonth}.pdf`);
+        showToast('PDF report generated successfully!', 'success');
+      } catch (err) {
+        console.error('Error generating report PDF:', err);
+        showToast('Failed to generate PDF.', 'error');
+      }
     }
 
     let trendsChartInstance = null;
@@ -1486,7 +2103,7 @@
       });
 
       const labels = sortedStats.map(s => s.month);
-      const data = sortedStats.map(s => s.usage || 0);
+      const data = sortedStats.map(s => getConvertedAmount(s.usage || 0));
 
       const ctx = document.getElementById('trendsChart')?.getContext('2d');
       if (!ctx) return;
@@ -1505,7 +2122,7 @@
         data: {
           labels: labels,
           datasets: [{
-            label: 'Monthly Usage (RM)',
+            label: `Monthly Usage (${CURRENCY_SYMBOLS[currentCurrency] || currentCurrency})`,
             data: data,
             backgroundColor: 'rgba(251, 191, 36, 0.7)',
             borderColor: '#FBBF24',
@@ -1535,7 +2152,7 @@
               ticks: {
                 color: textColor,
                 font: { family: 'Inter' },
-                callback: function(value) { return 'RM' + value; }
+                callback: function(value) { return (CURRENCY_SYMBOLS[currentCurrency] || currentCurrency) + value; }
               }
             }
           }
@@ -1608,9 +2225,10 @@
       const mamaThreshold = parseFloat(document.getElementById('settingMamaThreshold').value) || 50;
       const savingsThreshold = parseFloat(document.getElementById('settingSavingsThreshold').value) || 50;
       const savingsGoal = parseFloat(document.getElementById('settingSavingsGoal').value) || 500;
+      const currencySelect = document.getElementById('settingPrimaryCurrency').value;
 
       try {
-        const [resOffsets, resFlow, resAlerts] = await Promise.all([
+        const [resOffsets, resFlow, resAlerts, resCurrency] = await Promise.all([
           fetch(`${API}?action=setOffsets`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -1625,19 +2243,26 @@
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ token, mamaThreshold, savingsThreshold, savingsGoal })
+          }),
+          fetch(`${API}?action=setCurrencySettings`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ token, primary: 'MYR', selected: currencySelect, customRates: currencyRates })
           })
         ]);
 
         const d1 = await resOffsets.json();
         const d2 = await resFlow.json();
         const d3 = await resAlerts.json();
+        const d4 = await resCurrency.json();
 
-        if (d1.success && d2.success && d3.success) {
+        if (d1.success && d2.success && d3.success && d4.success) {
+          currentCurrency = currencySelect;
           playChime();
           showToast('Settings saved successfully', 'success');
           loadAllAppData();
         } else {
-          showToast(d1.error || d2.error || d3.error || 'Failed to save settings', 'error');
+          showToast(d1.error || d2.error || d3.error || d4.error || 'Failed to save settings', 'error');
         }
       } catch(e) {
         showToast('Connection error while saving settings', 'error');
@@ -2057,13 +2682,59 @@
       });
     }
 
+    let expenseBase64Attachment = '';
+
+    function previewAttachment(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      document.getElementById('attachmentFileName').textContent = file.name;
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        expenseBase64Attachment = e.target.result;
+        const img = document.getElementById('attachmentThumbnail');
+        img.src = expenseBase64Attachment;
+        document.getElementById('attachmentPreviewContainer').classList.remove('hidden');
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function clearAttachment() {
+      expenseBase64Attachment = '';
+      const input = document.getElementById('expenseAttachment');
+      if (input) input.value = '';
+      document.getElementById('attachmentFileName').textContent = 'No file selected';
+      document.getElementById('attachmentPreviewContainer').classList.add('hidden');
+      document.getElementById('attachmentThumbnail').src = '';
+    }
+
     function openAddExpenseModal() {
       playSoftClick();
+      clearAttachment();
       document.getElementById('addExpenseModal').classList.remove('hidden');
     }
     function closeAddExpenseModal() {
       playSoftClick();
+      clearAttachment();
       document.getElementById('addExpenseModal').classList.add('hidden');
+    }
+
+    function openReceiptLightbox(txId) {
+      playSoftClick();
+      const tx = transactionData.find(t => t.id === txId);
+      if (!tx || !tx.attachment) return;
+
+      const img = document.getElementById('lightboxImage');
+      img.src = tx.attachment;
+      document.getElementById('lightboxDownloadBtn').href = tx.attachment;
+      document.getElementById('lightboxNote').textContent = `${tx.note || tx.type} (${formatMoney(tx.amount)})`;
+      document.getElementById('receiptLightboxModal').classList.remove('hidden');
+      if (window.lucide) lucide.createIcons();
+    }
+
+    function closeReceiptLightbox() {
+      playSoftClick();
+      document.getElementById('receiptLightboxModal').classList.add('hidden');
     }
     function openRequestTransferModal() {
       playSoftClick();
@@ -2105,8 +2776,9 @@
     async function submitAddExpense() {
       playSoftClick();
       const type=document.getElementById('expenseType').value, amount=parseFloat(document.getElementById('expenseAmount').value)||0, note=document.getElementById('expenseNote').value;
+      const attachment = expenseBase64Attachment || '';
       try {
-        const res = await fetch(`${API}?action=addTransaction`, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({token,type,amount,note})});
+        const res = await fetch(`${API}?action=addTransaction`, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({token,type,amount,note,attachment})});
         const d = await res.json();
         if (d.success) {
           playChime();
@@ -2219,7 +2891,36 @@
     // Initial check
     document.addEventListener('DOMContentLoaded', () => {
       updateOnlineStatus();
+      initLocationDarkMode();
     });
+
+    let deferredPrompt = null;
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      deferredPrompt = e;
+      if (!sessionStorage.getItem('pwa_banner_dismissed')) {
+        const banner = document.getElementById('pwaInstallBanner');
+        if (banner) {
+          banner.classList.remove('hidden');
+          if (window.lucide) lucide.createIcons();
+        }
+      }
+    });
+
+    function triggerPwaInstall() {
+      if (!deferredPrompt) return;
+      deferredPrompt.prompt();
+      deferredPrompt.userChoice.then((choiceResult) => {
+        deferredPrompt = null;
+        dismissPwaBanner();
+      });
+    }
+
+    function dismissPwaBanner() {
+      const banner = document.getElementById('pwaInstallBanner');
+      if (banner) banner.classList.add('hidden');
+      sessionStorage.setItem('pwa_banner_dismissed', 'true');
+    }
 
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
@@ -2230,12 +2931,107 @@
     }
   </script>
 
+  <!-- RECEIPT LIGHTBOX MODAL -->
+  <div id="receiptLightboxModal" class="fixed inset-0 z-50 flex flex-col items-center justify-center bg-slate-950/85 backdrop-blur-md hidden p-4">
+    <div class="absolute top-6 right-6 flex items-center gap-3">
+      <a id="lightboxDownloadBtn" download="receipt.png" class="p-3 bg-white/10 text-white rounded-2xl hover:bg-white/20 transition-all flex items-center justify-center" title="Download Receipt">
+        <i data-lucide="download" class="w-5 h-5"></i>
+      </a>
+      <button onclick="closeReceiptLightbox()" class="p-3 bg-white/10 text-white rounded-2xl hover:bg-white/20 transition-all flex items-center justify-center">
+        <i data-lucide="x" class="w-5 h-5"></i>
+      </button>
+    </div>
+    <div class="max-w-4xl max-h-[80vh] w-full flex items-center justify-center p-2">
+      <img id="lightboxImage" class="max-w-full max-h-[80vh] rounded-3xl shadow-2xl border border-white/10 object-contain" src="">
+    </div>
+    <div class="mt-4 text-center">
+      <h3 class="text-sm font-bold text-white tracking-wide uppercase">Receipt / Attachment</h3>
+      <p id="lightboxNote" class="text-xs text-slate-400 mt-1">Transaction Details</p>
+    </div>
+  </div>
+
+  <!-- PWA INSTALL PROMPT BANNER -->
+  <div id="pwaInstallBanner" class="hidden fixed bottom-6 left-6 right-6 md:left-auto md:max-w-md z-50 p-4 rounded-3xl bg-white/70 dark:bg-slate-900/70 backdrop-blur-md border border-slate-200/50 dark:border-slate-800/50 shadow-2xl flex flex-col gap-3 transition-all duration-300">
+    <div class="flex items-start justify-between">
+      <div class="flex items-center gap-3">
+        <div class="p-2.5 bg-brand-yellow/20 text-brand-yellow rounded-2xl">
+          <i data-lucide="sparkles" class="w-5 h-5"></i>
+        </div>
+        <div>
+          <h4 class="text-sm font-bold text-slate-900 dark:text-white">Install Allowance App</h4>
+          <p class="text-xs text-slate-500 dark:text-slate-400">Launch directly from your home screen for an offline, full-screen native experience.</p>
+        </div>
+      </div>
+      <button onclick="dismissPwaBanner()" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1">
+        <i data-lucide="x" class="w-4 h-4"></i>
+      </button>
+    </div>
+    <div class="flex gap-2">
+      <button onclick="dismissPwaBanner()" class="flex-1 py-2 text-xs font-semibold bg-slate-100 dark:bg-slate-800 rounded-xl text-slate-700 dark:text-slate-300">Later</button>
+      <button onclick="triggerPwaInstall()" class="flex-1 py-2 text-xs font-bold bg-brand-yellow hover:bg-brand-yellow-hover text-slate-950 rounded-xl shadow-lg shadow-brand-yellow/20">Install</button>
+    </div>
+  </div>
+
+  <!-- MOBILE BOTTOM TAB NAVIGATION -->
+  <nav class="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/80 dark:bg-slate-900/80 backdrop-blur-lg border-t border-slate-200/50 dark:border-slate-800/50 flex items-center justify-around py-2 px-1 shadow-lg pb-safe">
+    <button onclick="switchTab('dashboard', true)" id="mobileTabBtn-dashboard" class="flex flex-col items-center gap-1 text-slate-500 hover:text-amber-500 transition-colors py-1 px-3 w-16 h-12 justify-center">
+      <i data-lucide="layout-dashboard" class="w-5 h-5"></i>
+      <span class="text-[9px] font-semibold tracking-tight">Dashboard</span>
+    </button>
+    <button onclick="switchTab('transactions', true)" id="mobileTabBtn-transactions" class="flex flex-col items-center gap-1 text-slate-500 hover:text-amber-500 transition-colors py-1 px-3 w-16 h-12 justify-center">
+      <i data-lucide="arrow-left-right" class="w-5 h-5"></i>
+      <span class="text-[9px] font-semibold tracking-tight">Activity</span>
+    </button>
+    <button onclick="switchTab('transfers', true)" id="mobileTabBtn-transfers" class="flex flex-col items-center gap-1 text-slate-500 hover:text-amber-500 transition-colors py-1 px-3 w-16 h-12 justify-center">
+      <i data-lucide="send" class="w-5 h-5"></i>
+      <span class="text-[9px] font-semibold tracking-tight">Transfers</span>
+    </button>
+    <button onclick="switchTab('analytics', true)" id="mobileTabBtn-analytics" class="flex flex-col items-center gap-1 text-slate-500 hover:text-amber-500 transition-colors py-1 px-3 w-16 h-12 justify-center">
+      <i data-lucide="pie-chart" class="w-5 h-5"></i>
+      <span class="text-[9px] font-semibold tracking-tight">Analysis</span>
+    </button>
+    <button onclick="toggleMobileMoreMenu()" class="flex flex-col items-center gap-1 text-slate-500 hover:text-amber-500 transition-colors py-1 px-3 w-16 h-12 justify-center relative">
+      <i data-lucide="more-horizontal" class="w-5 h-5"></i>
+      <span class="text-[9px] font-semibold tracking-tight">More</span>
+    </button>
+  </nav>
+
+  <!-- MOBILE MORE MENU SLIDE-UP POPOVER -->
+  <div id="mobileMoreMenu" class="md:hidden fixed inset-x-0 bottom-16 z-50 bg-white/95 dark:bg-slate-900/95 backdrop-blur-lg border border-slate-200/50 dark:border-slate-800/50 rounded-t-3xl shadow-2xl p-6 space-y-4 hidden transform translate-y-full transition-transform duration-300">
+    <div class="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-800">
+      <h4 class="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider">More Options</h4>
+      <button onclick="toggleMobileMoreMenu(false)" class="p-1.5 bg-slate-100 dark:bg-slate-800 rounded-full text-slate-400 hover:text-slate-600">
+        <i data-lucide="x" class="w-4 h-4"></i>
+      </button>
+    </div>
+    <div class="grid grid-cols-2 gap-4">
+      <button onclick="switchTab('history', true); toggleMobileMoreMenu(false);" id="mobileTabBtn-history" class="p-4 bg-slate-50 hover:bg-slate-100 dark:bg-slate-950/60 dark:hover:bg-slate-850/60 rounded-2xl flex flex-col items-center gap-2 border">
+        <div class="p-3 bg-indigo-500/10 text-indigo-500 rounded-xl"><i data-lucide="history" class="w-5 h-5"></i></div>
+        <span class="text-xs font-bold text-slate-800 dark:text-slate-200">History Log</span>
+      </button>
+      <button onclick="switchTab('settings', true); toggleMobileMoreMenu(false);" id="mobileTabBtn-settings" class="p-4 bg-slate-50 hover:bg-slate-100 dark:bg-slate-950/60 dark:hover:bg-slate-850/60 rounded-2xl flex flex-col items-center gap-2 border">
+        <div class="p-3 bg-amber-500/10 text-amber-500 rounded-xl"><i data-lucide="settings" class="w-5 h-5"></i></div>
+        <span class="text-xs font-bold text-slate-800 dark:text-slate-200">Settings</span>
+      </button>
+    </div>
+    <div class="pt-4 border-t border-slate-100 dark:border-slate-800 space-y-3">
+      <div class="bg-slate-100 dark:bg-slate-950/40 p-1 rounded-2xl flex items-center justify-between">
+        <button onclick="setTheme('light', true)" class="flex-1 py-1.5 rounded-xl flex items-center justify-center text-slate-500 hover:text-slate-950 transition-all"><i data-lucide="sun" class="w-4 h-4"></i></button>
+        <button onclick="setTheme('dark', true)" class="flex-1 py-1.5 rounded-xl flex items-center justify-center text-slate-500 hover:text-slate-950 transition-all"><i data-lucide="moon" class="w-4 h-4"></i></button>
+        <button onclick="setTheme('system', true)" class="flex-1 py-1.5 rounded-xl flex items-center justify-center text-slate-500 hover:text-slate-950 transition-all"><i data-lucide="monitor" class="w-4 h-4"></i></button>
+      </div>
+      <button onclick="logout()" class="w-full py-2.5 bg-red-50 dark:bg-red-950/20 text-red-600 dark:text-red-400 font-bold rounded-xl text-xs text-center flex items-center justify-center gap-2">
+        <i data-lucide="log-out" class="w-4 h-4"></i> Log Out
+      </button>
+    </div>
+  </div>
+
   <!-- TOAST CONTAINER -->
   <div id="toastContainer" class="fixed top-6 right-6 z-[100] flex flex-col gap-3 max-w-sm w-full pointer-events-none"></div>
 
   <!-- CUSTOM CONFIRM MODAL -->
-  <div id="confirmModal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm hidden">
-    <div class="bg-white dark:bg-brand-dark-card w-full max-w-md mx-4 p-6 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-2xl relative">
+  <div id="confirmModal" class="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-slate-900/60 backdrop-blur-sm hidden">
+    <div class="bg-white dark:bg-brand-dark-card w-full max-w-md mx-0 sm:mx-4 p-6 rounded-t-[2.5rem] sm:rounded-3xl border border-slate-200 dark:border-slate-800 shadow-2xl relative">
       <div class="flex items-start gap-4 mb-4">
         <div class="p-3 bg-amber-100 dark:bg-amber-950/40 rounded-2xl text-amber-500">
           <i data-lucide="help-circle" class="w-6 h-6"></i>
@@ -2253,8 +3049,8 @@
   </div>
 
   <!-- DELETE TRANSACTION GLASSMORPHISM CONFIRMATION MODAL -->
-  <div id="deleteTransactionModal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm hidden">
-    <div class="bg-white/70 dark:bg-brand-dark-card/70 backdrop-blur-md w-full max-w-md mx-4 p-6 rounded-3xl border border-slate-200/50 dark:border-slate-800/50 shadow-2xl relative">
+  <div id="deleteTransactionModal" class="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-slate-900/60 backdrop-blur-sm hidden">
+    <div class="bg-white/70 dark:bg-brand-dark-card/70 backdrop-blur-md w-full max-w-md mx-0 sm:mx-4 p-6 rounded-t-[2.5rem] sm:rounded-3xl border border-slate-200/50 dark:border-slate-800/50 shadow-2xl relative">
       <div class="flex items-start gap-4 mb-6">
         <div class="p-3 bg-red-100 dark:bg-red-950/40 rounded-2xl text-red-500">
           <i data-lucide="alert-triangle" class="w-6 h-6"></i>

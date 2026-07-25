@@ -1,0 +1,18 @@
+{
+  "name": "Allowance Manager",
+  "short_name": "Allowance",
+  "description": "Premium Private Allowance Manager and Tracking Dashboard",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0F172A",
+  "theme_color": "#FBBF24",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "192x192 512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
