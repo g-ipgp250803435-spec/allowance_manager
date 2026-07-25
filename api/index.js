@@ -110,12 +110,15 @@ module.exports = async (req, res) => {
         case 'topUpSavings': result = await topUpSavings(doc, body.months, body.totalAmount); break;
         case 'setOffsets': result = await setOffsets(doc, body.walletOffset, body.savingsOffset); break;
         case 'setMoneyFlowSettings': result = await setMoneyFlowSettings(doc, body.allowance, body.mama, body.wallet, body.savings); break;
+        case 'setAlertSettings': result = await setAlertSettings(doc, body.mamaThreshold, body.savingsThreshold, body.savingsGoal); break;
         case 'getHistory': result = await getHistory(doc); break;
         case 'getTransactions': result = await getTransactions(doc); break;
         case 'addTransaction': result = await addTransaction(doc, body.type, body.amount, body.note); break;
         case 'deleteTransaction': result = await deleteTransaction(doc, body.transactionId); break;
         case 'redoAction': result = await redoAction(doc, body.actionId); break;
         case 'undoAction': result = await undoAction(doc, body.actionId); break;
+        case 'backup': result = await backupData(doc); break;
+        case 'restore': result = await restoreData(doc, body.backup); break;
         default: result = { error: 'Unknown action' };
       }
       res.json(result);
@@ -126,6 +129,106 @@ module.exports = async (req, res) => {
   });
 };
 
+// ---------- Alert Settings ----------
+async function getAlertSettings(doc) {
+  const sheet = await getOrCreateSheet(doc, 'alert_settings', ['mama_threshold', 'savings_threshold', 'savings_goal']);
+  const rows = await sheet.getRows();
+  if (rows.length === 0) {
+    const defaults = { mama_threshold: '50', savings_threshold: '50', savings_goal: '500' };
+    await sheet.addRow(defaults);
+    return { mama_threshold: 50, savings_threshold: 50, savings_goal: 500 };
+  }
+  return {
+    mama_threshold: isNaN(parseFloat(rows[0].mama_threshold)) ? 50 : parseFloat(rows[0].mama_threshold),
+    savings_threshold: isNaN(parseFloat(rows[0].savings_threshold)) ? 50 : parseFloat(rows[0].savings_threshold),
+    savings_goal: isNaN(parseFloat(rows[0].savings_goal)) ? 500 : parseFloat(rows[0].savings_goal)
+  };
+}
+
+async function setAlertSettings(doc, mama, savings, goal) {
+  const sheet = await getOrCreateSheet(doc, 'alert_settings', ['mama_threshold', 'savings_threshold', 'savings_goal']);
+  let rows = await sheet.getRows();
+  if (rows.length === 0) {
+    await sheet.addRow({ mama_threshold: mama, savings_threshold: savings, savings_goal: goal });
+  } else {
+    rows[0].mama_threshold = mama;
+    rows[0].savings_threshold = savings;
+    rows[0].savings_goal = goal;
+    await rows[0].save();
+  }
+  await addHistory(doc, 'setAlertSettings', { mama, savings, goal });
+  return { success: true };
+}
+
+async function backupData(doc) {
+  const sheetsToBackup = [
+    { title: 'transactions', headers: ['Date', 'Type', 'Amount', 'Note', 'ID'] },
+    { title: 'allowance_stats', headers: ['Month', 'Date Received', 'Allowance Amount', 'Usage', 'Savings', 'Balance'] },
+    { title: 'savings_stats', headers: ['Month', 'Savings', 'Usage', 'Balance'] },
+    { title: 'manual_offsets', headers: ['wallet_offset', 'savings_offset'] },
+    { title: 'money_flow_settings', headers: ['allowance', 'mama', 'wallet', 'savings'] },
+    { title: 'alert_settings', headers: ['mama_threshold', 'savings_threshold', 'savings_goal'] },
+    { title: 'history', headers: ['ID', 'Type', 'Details', 'Timestamp', 'Undone'] }
+  ];
+
+  const backup = {};
+  for (const s of sheetsToBackup) {
+    const sheet = await getOrCreateSheet(doc, s.title, s.headers);
+    const rows = await sheet.getRows();
+    backup[s.title] = rows.map(r => {
+      const rowData = {};
+      s.headers.forEach(h => {
+        rowData[h] = r[h] !== undefined ? r[h] : '';
+      });
+      return rowData;
+    });
+  }
+  return { backup };
+}
+
+async function restoreData(doc, backup) {
+  if (!backup || typeof backup !== 'object') {
+    throw new Error('Invalid backup data format');
+  }
+
+  const sheetsToRestore = [
+    { title: 'transactions', headers: ['Date', 'Type', 'Amount', 'Note', 'ID'] },
+    { title: 'allowance_stats', headers: ['Month', 'Date Received', 'Allowance Amount', 'Usage', 'Savings', 'Balance'] },
+    { title: 'savings_stats', headers: ['Month', 'Savings', 'Usage', 'Balance'] },
+    { title: 'manual_offsets', headers: ['wallet_offset', 'savings_offset'] },
+    { title: 'money_flow_settings', headers: ['allowance', 'mama', 'wallet', 'savings'] },
+    { title: 'alert_settings', headers: ['mama_threshold', 'savings_threshold', 'savings_goal'] },
+    { title: 'history', headers: ['ID', 'Type', 'Details', 'Timestamp', 'Undone'] }
+  ];
+
+  for (const s of sheetsToRestore) {
+    if (!backup[s.title]) continue;
+    const sheet = await getOrCreateSheet(doc, s.title, s.headers);
+
+    // Clear existing data (fast, 1 call)
+    await sheet.clear();
+    // Restore headers (fast, 1 call)
+    await sheet.setHeaderRow(s.headers);
+
+    // Add new rows in a batch (fast, 1 call)
+    const backupRows = backup[s.title];
+    const rowsToRestore = backupRows.map(r => {
+      const rowObj = {};
+      s.headers.forEach(h => {
+        rowObj[h] = r[h] !== undefined ? r[h] : '';
+      });
+      return rowObj;
+    });
+
+    if (rowsToRestore.length > 0) {
+      await sheet.addRows(rowsToRestore);
+    }
+  }
+
+  await addHistory(doc, 'restoreData', { timestamp: new Date().toISOString() });
+  return { success: true };
+}
+
 // ---------- Dashboard Data ----------
 async function getDashboardData(doc) {
   const offsets = await getOffsets(doc);
@@ -135,12 +238,14 @@ async function getDashboardData(doc) {
   const savingsStats = await getSavingsStats(doc);
   const transfers = await getMonthlyMomTransfers(doc);
   const moneyFlowSettings = await getMoneyFlowSettings(doc);
+  const alertSettings = await getAlertSettings(doc);
   return {
     mamaAccount: balance + offsets.wallet,
     savingsBalance: savingsBalance + offsets.savings,
     totalRemaining: balance + offsets.wallet + savingsBalance + offsets.savings,
     offsets,
     moneyFlowSettings,
+    alertSettings,
     allowanceStats: stats,
     savingsStats,
     monthlyTransfers: transfers,
