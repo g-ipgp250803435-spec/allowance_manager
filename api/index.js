@@ -111,9 +111,11 @@ module.exports = async (req, res) => {
         case 'setOffsets': result = await setOffsets(doc, body.walletOffset, body.savingsOffset); break;
         case 'setMoneyFlowSettings': result = await setMoneyFlowSettings(doc, body.allowance, body.mama, body.wallet, body.savings); break;
         case 'setAlertSettings': result = await setAlertSettings(doc, body.mamaThreshold, body.savingsThreshold, body.savingsGoal); break;
+        case 'getCurrencySettings': result = await getCurrencySettings(doc); break;
+        case 'setCurrencySettings': result = await setCurrencySettings(doc, body.primary, body.selected, body.customRates); break;
         case 'getHistory': result = await getHistory(doc); break;
         case 'getTransactions': result = await getTransactions(doc); break;
-        case 'addTransaction': result = await addTransaction(doc, body.type, body.amount, body.note); break;
+        case 'addTransaction': result = await addTransaction(doc, body.type, body.amount, body.note, body.attachment); break;
         case 'deleteTransaction': result = await deleteTransaction(doc, body.transactionId); break;
         case 'redoAction': result = await redoAction(doc, body.actionId); break;
         case 'undoAction': result = await undoAction(doc, body.actionId); break;
@@ -160,14 +162,109 @@ async function setAlertSettings(doc, mama, savings, goal) {
   return { success: true };
 }
 
+async function getCurrencySettings(doc) {
+  const sheet = await getOrCreateSheet(doc, 'currency_settings', ['primary_currency', 'selected_currency', 'rates_json', 'last_updated']);
+  const rows = await sheet.getRows();
+  let data = {
+    primary_currency: 'MYR',
+    selected_currency: 'MYR',
+    rates_json: '{}',
+    last_updated: ''
+  };
+
+  if (rows.length > 0) {
+    data = {
+      primary_currency: rows[0].primary_currency || 'MYR',
+      selected_currency: rows[0].selected_currency || 'MYR',
+      rates_json: rows[0].rates_json || '{}',
+      last_updated: rows[0].last_updated || ''
+    };
+  } else {
+    await sheet.addRow(data);
+  }
+
+  const now = new Date();
+  let rates = {};
+  try {
+    rates = JSON.parse(data.rates_json);
+  } catch (e) {
+    rates = {};
+  }
+
+  const lastUpdatedDate = data.last_updated ? new Date(data.last_updated) : null;
+  const hoursSinceUpdate = lastUpdatedDate ? (now - lastUpdatedDate) / (1000 * 60 * 60) : 24;
+
+  if (hoursSinceUpdate >= 24 || !rates || Object.keys(rates).length === 0) {
+    try {
+      // Use Node 18+ global fetch
+      const res = await fetch('https://open.er-api.com/v6/latest/MYR');
+      if (res.ok) {
+        const json = await res.json();
+        if (json && json.rates) {
+          rates = json.rates;
+          data.rates_json = JSON.stringify(rates);
+          data.last_updated = now.toISOString();
+
+          const updatedRows = await sheet.getRows();
+          if (updatedRows.length > 0) {
+            updatedRows[0].rates_json = data.rates_json;
+            updatedRows[0].last_updated = data.last_updated;
+            await updatedRows[0].save();
+          }
+        }
+      }
+    } catch (err) {
+      console.error('Failed to fetch exchange rates:', err);
+    }
+  }
+
+  if (!rates || Object.keys(rates).length === 0) {
+    rates = { MYR: 1, USD: 0.21, SGD: 0.28, EUR: 0.19, GBP: 0.17 };
+  }
+
+  return {
+    primary_currency: data.primary_currency,
+    selected_currency: data.selected_currency,
+    rates,
+    last_updated: data.last_updated
+  };
+}
+
+async function setCurrencySettings(doc, primary, selected, customRates = null) {
+  const sheet = await getOrCreateSheet(doc, 'currency_settings', ['primary_currency', 'selected_currency', 'rates_json', 'last_updated']);
+  let rows = await sheet.getRows();
+  const rates_json = customRates ? JSON.stringify(customRates) : '{}';
+  const now = new Date().toISOString();
+
+  if (rows.length === 0) {
+    await sheet.addRow({
+      primary_currency: primary,
+      selected_currency: selected,
+      rates_json,
+      last_updated: now
+    });
+  } else {
+    rows[0].primary_currency = primary;
+    rows[0].selected_currency = selected;
+    if (customRates) {
+      rows[0].rates_json = rates_json;
+      rows[0].last_updated = now;
+    }
+    await rows[0].save();
+  }
+  await addHistory(doc, 'setCurrencySettings', { primary, selected });
+  return { success: true };
+}
+
 async function backupData(doc) {
   const sheetsToBackup = [
-    { title: 'transactions', headers: ['Date', 'Type', 'Amount', 'Note', 'ID'] },
+    { title: 'transactions', headers: ['Date', 'Type', 'Amount', 'Note', 'ID', 'Attachment'] },
     { title: 'allowance_stats', headers: ['Month', 'Date Received', 'Allowance Amount', 'Usage', 'Savings', 'Balance'] },
     { title: 'savings_stats', headers: ['Month', 'Savings', 'Usage', 'Balance'] },
     { title: 'manual_offsets', headers: ['wallet_offset', 'savings_offset'] },
     { title: 'money_flow_settings', headers: ['allowance', 'mama', 'wallet', 'savings'] },
     { title: 'alert_settings', headers: ['mama_threshold', 'savings_threshold', 'savings_goal'] },
+    { title: 'currency_settings', headers: ['primary_currency', 'selected_currency', 'rates_json', 'last_updated'] },
     { title: 'history', headers: ['ID', 'Type', 'Details', 'Timestamp', 'Undone'] }
   ];
 
@@ -192,12 +289,13 @@ async function restoreData(doc, backup) {
   }
 
   const sheetsToRestore = [
-    { title: 'transactions', headers: ['Date', 'Type', 'Amount', 'Note', 'ID'] },
+    { title: 'transactions', headers: ['Date', 'Type', 'Amount', 'Note', 'ID', 'Attachment'] },
     { title: 'allowance_stats', headers: ['Month', 'Date Received', 'Allowance Amount', 'Usage', 'Savings', 'Balance'] },
     { title: 'savings_stats', headers: ['Month', 'Savings', 'Usage', 'Balance'] },
     { title: 'manual_offsets', headers: ['wallet_offset', 'savings_offset'] },
     { title: 'money_flow_settings', headers: ['allowance', 'mama', 'wallet', 'savings'] },
     { title: 'alert_settings', headers: ['mama_threshold', 'savings_threshold', 'savings_goal'] },
+    { title: 'currency_settings', headers: ['primary_currency', 'selected_currency', 'rates_json', 'last_updated'] },
     { title: 'history', headers: ['ID', 'Type', 'Details', 'Timestamp', 'Undone'] }
   ];
 
@@ -239,6 +337,7 @@ async function getDashboardData(doc) {
   const transfers = await getMonthlyMomTransfers(doc);
   const moneyFlowSettings = await getMoneyFlowSettings(doc);
   const alertSettings = await getAlertSettings(doc);
+  const currencySettings = await getCurrencySettings(doc);
   return {
     mamaAccount: balance + offsets.wallet,
     savingsBalance: savingsBalance + offsets.savings,
@@ -246,6 +345,7 @@ async function getDashboardData(doc) {
     offsets,
     moneyFlowSettings,
     alertSettings,
+    currencySettings,
     allowanceStats: stats,
     savingsStats,
     monthlyTransfers: transfers,
@@ -260,28 +360,29 @@ async function getDashboardData(doc) {
 
 // ---------- Transactions Extra ----------
 async function getTransactions(doc) {
-  const sheet = await getOrCreateSheet(doc, 'transactions', ['Date', 'Type', 'Amount', 'Note', 'ID']);
+  const sheet = await getOrCreateSheet(doc, 'transactions', ['Date', 'Type', 'Amount', 'Note', 'ID', 'Attachment']);
   const rows = await sheet.getRows();
   return rows.map(r => ({
     date: r.Date,
     type: r.Type,
     amount: Number(r.Amount) || 0,
     note: r.Note,
-    id: r.ID
+    id: r.ID,
+    attachment: r.Attachment || ''
   }));
 }
 
-async function addTransaction(doc, type, amount, note) {
-  const sheet = await getOrCreateSheet(doc, 'transactions', ['Date', 'Type', 'Amount', 'Note', 'ID']);
+async function addTransaction(doc, type, amount, note, attachment = '') {
+  const sheet = await getOrCreateSheet(doc, 'transactions', ['Date', 'Type', 'Amount', 'Note', 'ID', 'Attachment']);
   const txId = uuid();
   const dateStr = new Date().toISOString();
-  await sheet.addRow({ Date: dateStr, Type: type, Amount: amount, Note: note, ID: txId });
-  await addHistory(doc, 'addTransaction', { type, amount, note, txId });
+  await sheet.addRow({ Date: dateStr, Type: type, Amount: amount, Note: note, ID: txId, Attachment: attachment });
+  await addHistory(doc, 'addTransaction', { type, amount, note, txId, attachment });
   return { success: true, transactionId: txId };
 }
 
 async function deleteTransaction(doc, transactionId) {
-  const txSheet = await getOrCreateSheet(doc, 'transactions', ['Date', 'Type', 'Amount', 'Note', 'ID']);
+  const txSheet = await getOrCreateSheet(doc, 'transactions', ['Date', 'Type', 'Amount', 'Note', 'ID', 'Attachment']);
   const rows = await txSheet.getRows();
   const row = rows.find(r => r.ID === transactionId);
   if (!row) {
@@ -294,7 +395,8 @@ async function deleteTransaction(doc, transactionId) {
     date: row.Date,
     type: row.Type,
     amount: Number(row.Amount) || 0,
-    note: row.Note
+    note: row.Note,
+    attachment: row.Attachment || ''
   };
 
   // Check the history to see if there's any detailed adjustment we can reverse directly.
@@ -579,7 +681,7 @@ async function updateDateReceived(doc, month, newDate) {
 
 // ---------- Request Money ----------
 async function requestMoney(doc, amount) {
-  const txSheet = await getOrCreateSheet(doc, 'transactions', ['Date', 'Type', 'Amount', 'Note', 'ID']);
+  const txSheet = await getOrCreateSheet(doc, 'transactions', ['Date', 'Type', 'Amount', 'Note', 'ID', 'Attachment']);
   const txId = uuid();
   await txSheet.addRow({ Date: new Date().toISOString(), Type: 'refill', Amount: amount, Note: 'Transfer from Mama', ID: txId });
 
@@ -744,7 +846,7 @@ async function redoAction(doc, actionId) {
     case 'useSavings': await useSavings(doc, details.amount, details.month); break;
     case 'topUpSavings': await topUpSavings(doc, details.months, details.totalAmount); break;
     case 'setOffsets': await setOffsets(doc, details.wallet, details.savings); break;
-    case 'addTransaction': await addTransaction(doc, details.type, details.amount, details.note); break;
+    case 'addTransaction': await addTransaction(doc, details.type, details.amount, details.note, details.attachment); break;
     case 'deleteTransaction': await deleteTransaction(doc, details.txBackup ? details.txBackup.id : null); break;
   }
   action.Undone = false;
@@ -856,13 +958,14 @@ async function undoAction(doc, actionId) {
     case 'deleteTransaction':
       // To undo a deleteTransaction action, we restore the original deleted transaction
       // and reverse the adjustments that we applied during deletion.
-      const txSheetRestore = await getOrCreateSheet(doc, 'transactions', ['Date', 'Type', 'Amount', 'Note', 'ID']);
+      const txSheetRestore = await getOrCreateSheet(doc, 'transactions', ['Date', 'Type', 'Amount', 'Note', 'ID', 'Attachment']);
       await txSheetRestore.addRow({
         Date: details.txBackup.date,
         Type: details.txBackup.type,
         Amount: details.txBackup.amount,
         Note: details.txBackup.note,
-        ID: details.txBackup.id
+        ID: details.txBackup.id,
+        Attachment: details.txBackup.attachment || ''
       });
 
       // Restore adjustments (opposite of what deleteTransaction did, so we use the stored adjustments)

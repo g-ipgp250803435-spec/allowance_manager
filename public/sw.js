@@ -2,6 +2,8 @@ const CACHE_NAME = 'allowance-manager-v1';
 const ASSETS = [
   '/',
   '/index.html',
+  '/manifest.json',
+  '/icon.svg',
   'https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap',
   'https://cdn.tailwindcss.com',
   'https://unpkg.com/lucide@latest',
