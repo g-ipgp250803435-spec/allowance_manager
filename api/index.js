@@ -75,6 +75,11 @@ async function getOrCreateSheet(doc, title, headers) {
   return sheet;
 }
 
+// In-memory Mock Storage for Local Development fallback
+let mockBudgetSettings = { total: 200, refills: 100, savings_usage: 50 };
+let mockSecureNotes = [];
+let mockSharedLinks = [];
+
 module.exports = async (req, res) => {
   await cors()(req, res, async () => {
     const { action } = req.query;
@@ -96,7 +101,131 @@ module.exports = async (req, res) => {
       return res.status(401).json({ error: 'Invalid credentials' });
     }
 
-    if (body.token !== 'admin-session') return res.status(401).json({ error: 'Unauthorized' });
+    if (action !== 'getSharedDashboard') {
+      if (body.token !== 'admin-session') return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    const useMock = !process.env.GOOGLE_SHEET_ID || !process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL || !process.env.GOOGLE_PRIVATE_KEY;
+    if (useMock) {
+      let result;
+      switch (action) {
+        case 'getDashboard':
+          result = {
+            mamaAccount: 240,
+            savingsBalance: 120,
+            totalRemaining: 360,
+            offsets: { wallet: 0, savings: 0 },
+            moneyFlowSettings: { allowance: 430, mama: 300, wallet: 100, savings: 30 },
+            alertSettings: { mama_threshold: 50, savings_threshold: 50, savings_goal: 500 },
+            currencySettings: { primary_currency: 'MYR', selected_currency: 'MYR', rates: { MYR: 1, USD: 0.22, SGD: 0.3 } },
+            allowanceStats: [
+              { month: 'January 2026', dateReceived: '01/01/2026', allowance: 430, usage: 100, savings: 30, balance: 300 },
+              { month: 'December 2025', dateReceived: '01/12/2025', allowance: 430, usage: 100, savings: 30, balance: 300 }
+            ],
+            savingsStats: [
+              { month: 'January 2026', savings: 30, usage: 0, balance: 30 },
+              { month: 'December 2025', savings: 30, usage: 10, balance: 20 }
+            ],
+            monthlyTransfers: [
+              { month: 'Jan 2026', amount: 80 }
+            ],
+            bankAccounts: [
+              { name: "Aieryl's Maybank", number: "153056659975" },
+              { name: "Aieryl's Bank Rakyat", number: "2252698058" },
+              { name: "Mama's Bank Rakyat", number: "2212319157" }
+            ],
+            lastUpdated: new Date().toISOString()
+          };
+          break;
+        case 'getTransactions':
+          result = [
+            { date: new Date().toISOString(), type: 'refill', amount: 80, note: 'Refill Maybank', id: 'tx-1', attachment: '' },
+            { date: new Date(Date.now() - 5*24*60*60*1000).toISOString(), type: 'income', amount: 300, note: 'Allowance Received', id: 'tx-2', attachment: '' },
+            { date: new Date(Date.now() - 10*24*60*60*1000).toISOString(), type: 'savings_usage', amount: 10, note: 'Used savings Dec', id: 'tx-3', attachment: '' }
+          ];
+          break;
+        case 'getHistory':
+          result = [
+            { id: 'hist-1', type: 'addTransaction', details: { type: 'refill', amount: 80, note: 'Refill Maybank' }, timestamp: new Date().toISOString(), undone: false }
+          ];
+          break;
+        case 'getBudgetSettings':
+          result = mockBudgetSettings;
+          break;
+        case 'setBudgetSettings':
+          mockBudgetSettings = { total: body.total, refills: body.refills, savings_usage: body.savings_usage };
+          result = { success: true };
+          break;
+        case 'getSecureNotes':
+          result = mockSecureNotes;
+          break;
+        case 'saveSecureNote':
+          const existingNoteIdx = mockSecureNotes.findIndex(n => n.id === body.id);
+          const newNote = { id: body.id || uuid(), encrypted_data: body.encrypted_data, iv: body.iv, salt: body.salt };
+          if (existingNoteIdx >= 0) {
+            mockSecureNotes[existingNoteIdx] = newNote;
+          } else {
+            mockSecureNotes.push(newNote);
+          }
+          result = { success: true };
+          break;
+        case 'deleteSecureNote':
+          mockSecureNotes = mockSecureNotes.filter(n => n.id !== body.id);
+          result = { success: true };
+          break;
+        case 'getSharedLinks':
+          result = mockSharedLinks;
+          break;
+        case 'createSharedLink':
+          const newLink = {
+            id: uuid(),
+            token: uuid().replace(/-/g, ''),
+            expiry: new Date(Date.now() + parseFloat(body.expiryHours) * 60 * 60 * 1000).toISOString(),
+            password_hash: body.passwordHash || '',
+            created_at: new Date().toISOString()
+          };
+          mockSharedLinks.push(newLink);
+          result = { success: true, id: newLink.id, token: newLink.token, expiry: newLink.expiry };
+          break;
+        case 'revokeSharedLink':
+          mockSharedLinks = mockSharedLinks.filter(l => l.id !== body.id && l.token !== body.id);
+          result = { success: true };
+          break;
+        case 'getSharedDashboard':
+          const link = mockSharedLinks.find(l => l.token === body.token);
+          if (!link) {
+            result = { error: 'Link invalid' };
+          } else if (new Date() > new Date(link.expiry)) {
+            result = { error: 'Link expired' };
+          } else if (link.password_hash && link.password_hash !== body.passwordHash) {
+            result = { error: 'Password incorrect', password_required: true };
+          } else {
+            result = {
+              success: true,
+              mamaAccount: 240,
+              savingsBalance: 120,
+              totalRemaining: 360,
+              moneyFlowSettings: { allowance: 430, mama: 300, wallet: 100, savings: 30 }
+            };
+          }
+          break;
+        case 'addTransaction':
+        case 'deleteTransaction':
+        case 'requestMoney':
+        case 'useSavings':
+        case 'topUpSavings':
+        case 'setOffsets':
+        case 'setMoneyFlowSettings':
+        case 'setAlertSettings':
+        case 'getCurrencySettings':
+        case 'setCurrencySettings':
+          result = { success: true };
+          break;
+        default:
+          result = { error: 'Unknown action' };
+      }
+      return res.json(result);
+    }
 
     try {
       const doc = await getDoc();
@@ -121,6 +250,15 @@ module.exports = async (req, res) => {
         case 'undoAction': result = await undoAction(doc, body.actionId); break;
         case 'backup': result = await backupData(doc); break;
         case 'restore': result = await restoreData(doc, body.backup); break;
+        case 'getBudgetSettings': result = await getBudgetSettings(doc); break;
+        case 'setBudgetSettings': result = await setBudgetSettings(doc, body.total, body.refills, body.savings_usage); break;
+        case 'getSecureNotes': result = await getSecureNotes(doc); break;
+        case 'saveSecureNote': result = await saveSecureNote(doc, body.id, body.encrypted_data, body.iv, body.salt); break;
+        case 'deleteSecureNote': result = await deleteSecureNote(doc, body.id); break;
+        case 'getSharedLinks': result = await getSharedLinks(doc); break;
+        case 'createSharedLink': result = await createSharedLink(doc, body.expiryHours, body.passwordHash); break;
+        case 'revokeSharedLink': result = await revokeSharedLink(doc, body.id); break;
+        case 'getSharedDashboard': result = await getSharedDashboard(doc, body.token, body.passwordHash); break;
         default: result = { error: 'Unknown action' };
       }
       res.json(result);
@@ -265,7 +403,10 @@ async function backupData(doc) {
     { title: 'money_flow_settings', headers: ['allowance', 'mama', 'wallet', 'savings'] },
     { title: 'alert_settings', headers: ['mama_threshold', 'savings_threshold', 'savings_goal'] },
     { title: 'currency_settings', headers: ['primary_currency', 'selected_currency', 'rates_json', 'last_updated'] },
-    { title: 'history', headers: ['ID', 'Type', 'Details', 'Timestamp', 'Undone'] }
+    { title: 'history', headers: ['ID', 'Type', 'Details', 'Timestamp', 'Undone'] },
+    { title: 'budget_settings', headers: ['category', 'budget_amount'] },
+    { title: 'secure_notes', headers: ['id', 'encrypted_data', 'iv', 'salt'] },
+    { title: 'shared_links', headers: ['id', 'token', 'expiry', 'password_hash', 'created_at'] }
   ];
 
   const backup = {};
@@ -296,7 +437,10 @@ async function restoreData(doc, backup) {
     { title: 'money_flow_settings', headers: ['allowance', 'mama', 'wallet', 'savings'] },
     { title: 'alert_settings', headers: ['mama_threshold', 'savings_threshold', 'savings_goal'] },
     { title: 'currency_settings', headers: ['primary_currency', 'selected_currency', 'rates_json', 'last_updated'] },
-    { title: 'history', headers: ['ID', 'Type', 'Details', 'Timestamp', 'Undone'] }
+    { title: 'history', headers: ['ID', 'Type', 'Details', 'Timestamp', 'Undone'] },
+    { title: 'budget_settings', headers: ['category', 'budget_amount'] },
+    { title: 'secure_notes', headers: ['id', 'encrypted_data', 'iv', 'salt'] },
+    { title: 'shared_links', headers: ['id', 'token', 'expiry', 'password_hash', 'created_at'] }
   ];
 
   for (const s of sheetsToRestore) {
@@ -852,6 +996,150 @@ async function redoAction(doc, actionId) {
   action.Undone = false;
   await action.save();
   return { success: true };
+}
+
+// ---------- Budget Settings ----------
+async function getBudgetSettings(doc) {
+  const sheet = await getOrCreateSheet(doc, 'budget_settings', ['category', 'budget_amount']);
+  const rows = await sheet.getRows();
+  const settings = { total: 0, refills: 0, savings_usage: 0 };
+  rows.forEach(r => {
+    if (r.category) {
+      settings[r.category] = parseFloat(r.budget_amount) || 0;
+    }
+  });
+  return settings;
+}
+
+async function setBudgetSettings(doc, total, refills, savings_usage) {
+  const sheet = await getOrCreateSheet(doc, 'budget_settings', ['category', 'budget_amount']);
+  const rows = await sheet.getRows();
+
+  const categories = { total, refills, savings_usage };
+
+  for (const cat of Object.keys(categories)) {
+    const existing = rows.find(r => r.category === cat);
+    if (existing) {
+      existing.budget_amount = String(categories[cat]);
+      await existing.save();
+    } else {
+      await sheet.addRow({ category: cat, budget_amount: String(categories[cat]) });
+    }
+  }
+  return { success: true };
+}
+
+// ---------- Secure Notes ----------
+async function getSecureNotes(doc) {
+  const sheet = await getOrCreateSheet(doc, 'secure_notes', ['id', 'encrypted_data', 'iv', 'salt']);
+  const rows = await sheet.getRows();
+  return rows.map(r => ({
+    id: r.id,
+    encrypted_data: r.encrypted_data,
+    iv: r.iv,
+    salt: r.salt
+  }));
+}
+
+async function saveSecureNote(doc, id, encrypted_data, iv, salt) {
+  const sheet = await getOrCreateSheet(doc, 'secure_notes', ['id', 'encrypted_data', 'iv', 'salt']);
+  const rows = await sheet.getRows();
+  const existing = rows.find(r => r.id === id);
+  if (existing) {
+    existing.encrypted_data = encrypted_data;
+    existing.iv = iv;
+    existing.salt = salt;
+    await existing.save();
+  } else {
+    await sheet.addRow({ id: id || uuid(), encrypted_data, iv, salt });
+  }
+  return { success: true };
+}
+
+async function deleteSecureNote(doc, id) {
+  const sheet = await getOrCreateSheet(doc, 'secure_notes', ['id', 'encrypted_data', 'iv', 'salt']);
+  const rows = await sheet.getRows();
+  const existing = rows.find(r => r.id === id);
+  if (existing) {
+    await existing.delete();
+    return { success: true };
+  }
+  return { error: 'Note not found' };
+}
+
+// ---------- Shared Links ----------
+async function getSharedLinks(doc) {
+  const sheet = await getOrCreateSheet(doc, 'shared_links', ['id', 'token', 'expiry', 'password_hash', 'created_at']);
+  const rows = await sheet.getRows();
+  return rows.map(r => ({
+    id: r.id,
+    token: r.token,
+    expiry: r.expiry,
+    password_hash: r.password_hash,
+    created_at: r.created_at
+  }));
+}
+
+async function createSharedLink(doc, expiryHours, passwordHash) {
+  const sheet = await getOrCreateSheet(doc, 'shared_links', ['id', 'token', 'expiry', 'password_hash', 'created_at']);
+  const id = uuid();
+  const token = uuid().replace(/-/g, '');
+  const now = new Date();
+  const expiry = new Date(now.getTime() + parseFloat(expiryHours) * 60 * 60 * 1000).toISOString();
+  await sheet.addRow({
+    id,
+    token,
+    expiry,
+    password_hash: passwordHash || '',
+    created_at: now.toISOString()
+  });
+  return { success: true, id, token, expiry };
+}
+
+async function revokeSharedLink(doc, id) {
+  const sheet = await getOrCreateSheet(doc, 'shared_links', ['id', 'token', 'expiry', 'password_hash', 'created_at']);
+  const rows = await sheet.getRows();
+  const existing = rows.find(r => r.id === id || r.token === id);
+  if (existing) {
+    await existing.delete();
+    return { success: true };
+  }
+  return { error: 'Link not found' };
+}
+
+async function getSharedDashboard(doc, token, passwordHash) {
+  const sheet = await getOrCreateSheet(doc, 'shared_links', ['id', 'token', 'expiry', 'password_hash', 'created_at']);
+  const rows = await sheet.getRows();
+  const link = rows.find(r => r.token === token);
+  if (!link) {
+    return { error: 'Link invalid' };
+  }
+
+  const now = new Date();
+  const expiryDate = new Date(link.expiry);
+  if (now > expiryDate) {
+    return { error: 'Link expired' };
+  }
+
+  if (link.password_hash && link.password_hash.trim() !== '') {
+    if (!passwordHash || passwordHash !== link.password_hash) {
+      return { error: 'Password incorrect', password_required: true };
+    }
+  }
+
+  // Fetch minimal dashboard data
+  const offsets = await getOffsets(doc);
+  const balance = await calculateBalance(doc);
+  const savingsBalance = await calculateSavingsBalance(doc);
+  const moneyFlowSettings = await getMoneyFlowSettings(doc);
+
+  return {
+    success: true,
+    mamaAccount: balance + offsets.wallet,
+    savingsBalance: savingsBalance + offsets.savings,
+    totalRemaining: balance + offsets.wallet + savingsBalance + offsets.savings,
+    moneyFlowSettings
+  };
 }
 
 async function undoAction(doc, actionId) {
