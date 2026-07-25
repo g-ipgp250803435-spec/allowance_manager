@@ -14,6 +14,7 @@
   <script src="https://unpkg.com/lucide@latest"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
   <script>
     tailwind.config = {
       darkMode: 'class',
@@ -21,12 +22,21 @@
         extend: {
           colors: {
             brand: {
-              yellow: '#FBBF24',
-              'yellow-hover': '#F59E0B',
-              dark: '#0F172A',
-              'dark-card': '#1E293B',
-              light: '#F8FAFC',
+              yellow: 'var(--brand-accent, #FBBF24)',
+              'yellow-hover': 'var(--brand-accent-hover, #F59E0B)',
+              dark: 'var(--brand-bg-dark, #0F172A)',
+              'dark-card': 'var(--brand-card-dark, #1E293B)',
+              light: 'var(--brand-bg-light, #F8FAFC)',
               'light-card': '#FFFFFF',
+            },
+            amber: {
+              50: 'var(--brand-accent-100, #FEF3C7)',
+              100: 'var(--brand-accent-100, #FEF3C7)',
+              200: 'var(--brand-accent-200, #FDE68A)',
+              400: 'var(--brand-accent-400, #FBBF24)',
+              500: 'var(--brand-accent, #FBBF24)',
+              600: 'var(--brand-accent-hover, #F59E0B)',
+              900: 'var(--brand-accent-900, #78350F)',
             }
           },
           fontFamily: {
@@ -37,12 +47,106 @@
     }
   </script>
   <style>
+    :root {
+      --brand-accent: #FBBF24;
+      --brand-accent-hover: #F59E0B;
+      --brand-accent-100: #FEF3C7;
+      --brand-accent-200: #FDE68A;
+      --brand-accent-400: #FBBF24;
+      --brand-accent-900: #78350F;
+      --brand-bg-light: #F1F5F9;
+      --brand-bg-dark: #0F172A;
+      --brand-card-dark: #1E293B;
+    }
+
+    /* Dynamically overwrite base colors & gradient components */
+    body {
+      background-color: var(--brand-bg-light) !important;
+    }
+    .dark body {
+      background-color: var(--brand-bg-dark) !important;
+    }
+    main {
+      background-color: var(--brand-bg-light) !important;
+    }
+    .dark main {
+      background-color: var(--brand-bg-dark) !important;
+    }
+    .bg-brand-yellow {
+      background-color: var(--brand-accent) !important;
+    }
+    .hover\:bg-brand-yellow-hover:hover {
+      background-color: var(--brand-accent-hover) !important;
+    }
+    .text-amber-500 {
+      color: var(--brand-accent) !important;
+    }
+    .text-amber-600 {
+      color: var(--brand-accent-hover) !important;
+    }
+    .bg-amber-50 {
+      background-color: var(--brand-accent-100) !important;
+    }
+    .bg-amber-100 {
+      background-color: var(--brand-accent-100) !important;
+    }
+    .bg-amber-500 {
+      background-color: var(--brand-accent) !important;
+    }
+    .border-amber-500 {
+      border-color: var(--brand-accent) !important;
+    }
+    .border-amber-200 {
+      border-color: var(--brand-accent-200) !important;
+    }
+    .border-amber-300 {
+      border-color: var(--brand-accent-400) !important;
+    }
+    .ring-brand-yellow {
+      --tw-ring-color: var(--brand-accent) !important;
+    }
+    .text-brand-yellow {
+      color: var(--brand-accent) !important;
+    }
+
+    /* Shared View Overrides */
+    body.is-shared-view #sidebar,
+    body.is-shared-view #sidebarBackdrop,
+    body.is-shared-view header,
+    body.is-shared-view #smartInsightsCard,
+    body.is-shared-view #healthScoreCard,
+    body.is-shared-view #pwaInstallBanner,
+    body.is-shared-view #view-dashboard button,
+    body.is-shared-view #view-dashboard .flex.gap-2,
+    body.is-shared-view #view-dashboard .mt-4.pt-4,
+    body.is-shared-view #view-dashboard .space-y-6,
+    body.is-shared-view #view-dashboard .grid-cols-1.md:grid-cols-2 {
+      display: none !important;
+    }
+    body.is-shared-view #workspaceContainer {
+      padding-bottom: 40px !important;
+      padding-top: 40px !important;
+    }
+    body.is-shared-view #view-dashboard {
+      display: block !important;
+      max-width: 800px;
+      margin: 0 auto;
+    }
+
     ::-webkit-scrollbar { width: 6px; height: 6px; }
     ::-webkit-scrollbar-track { background: transparent; }
     ::-webkit-scrollbar-thumb { background: #CBD5E1; border-radius: 4px; }
     .dark ::-webkit-scrollbar-thumb { background: #475569; }
     .theme-transition {
       transition: background-color 0.3s ease, border-color 0.3s ease, text-color 0.3s ease, shadow 0.3s ease;
+    }
+    @keyframes pulseRed {
+      0%, 100% { border-color: rgb(239, 68, 68); box-shadow: 0 0 0 0px rgba(239, 68, 68, 0.4); }
+      50% { border-color: rgb(248, 113, 113); box-shadow: 0 0 12px 4px rgba(239, 68, 68, 0.2); }
+    }
+    .pulsing-red-border {
+      animation: pulseRed 2s infinite;
+      border-width: 2px !important;
     }
     @media print {
       body {
@@ -186,6 +290,9 @@
             <button onclick="switchTab('history', true)" id="tabBtn-history" class="nav-tab w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-medium transition-all duration-150 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800">
               <i data-lucide="history" class="w-5 h-5"></i> History
             </button>
+            <button onclick="switchTab('vault', true)" id="tabBtn-vault" class="nav-tab w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-medium transition-all duration-150 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800">
+              <i data-lucide="lock" class="w-5 h-5"></i> Secure Vault
+            </button>
             <button onclick="switchTab('settings', true)" id="tabBtn-settings" class="nav-tab w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-medium transition-all duration-150 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800">
               <i data-lucide="settings" class="w-5 h-5"></i> Settings
             </button>
@@ -275,10 +382,15 @@
             </div>
 
             <!-- Top Metrics Summary Cards -->
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
               <div id="mamaCard" class="bg-white dark:bg-brand-dark-card rounded-3xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm relative overflow-hidden group hover:shadow-md transition-all">
                 <div class="flex items-center justify-between mb-4">
-                  <span class="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Mama Account</span>
+                  <span class="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
+                    Mama Account
+                    <button onclick="speakBalance('Mama Account', dashboardData.mamaAccount)" class="p-1 hover:bg-slate-100 dark:hover:bg-slate-805 rounded-lg transition-all" title="Speak Balance">
+                      <i data-lucide="volume-2" class="w-3.5 h-3.5 text-slate-400 hover:text-amber-500"></i>
+                    </button>
+                  </span>
                   <div class="w-10 h-10 rounded-full bg-amber-100 dark:bg-amber-950/40 text-amber-500 flex items-center justify-center">
                     <i data-lucide="landmark" class="w-5 h-5"></i>
                   </div>
@@ -289,7 +401,12 @@
 
               <div id="savingsCard" class="bg-white dark:bg-brand-dark-card rounded-3xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm relative overflow-hidden group hover:shadow-md transition-all">
                 <div class="flex items-center justify-between mb-4">
-                  <span class="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Savings Balance</span>
+                  <span class="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
+                    Savings Balance
+                    <button onclick="speakBalance('Savings Balance', dashboardData.savingsBalance)" class="p-1 hover:bg-slate-100 dark:hover:bg-slate-805 rounded-lg transition-all" title="Speak Balance">
+                      <i data-lucide="volume-2" class="w-3.5 h-3.5 text-slate-400 hover:text-amber-500"></i>
+                    </button>
+                  </span>
                   <div class="w-10 h-10 rounded-full bg-amber-100 dark:bg-amber-950/40 text-amber-500 flex items-center justify-center">
                     <i data-lucide="piggy-bank" class="w-5 h-5"></i>
                   </div>
@@ -317,13 +434,44 @@
 
               <div class="bg-white dark:bg-brand-dark-card rounded-3xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm relative overflow-hidden group hover:shadow-md transition-all">
                 <div class="flex items-center justify-between mb-4">
-                  <span class="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Total Remaining</span>
+                  <span class="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
+                    Total Remaining
+                    <button onclick="speakBalance('Total Remaining', dashboardData.totalRemaining)" class="p-1 hover:bg-slate-100 dark:hover:bg-slate-805 rounded-lg transition-all" title="Speak Balance">
+                      <i data-lucide="volume-2" class="w-3.5 h-3.5 text-slate-400 hover:text-amber-500"></i>
+                    </button>
+                  </span>
                   <div class="w-10 h-10 rounded-full bg-amber-100 dark:bg-amber-950/40 text-amber-500 flex items-center justify-center">
                     <i data-lucide="wallet" class="w-5 h-5"></i>
                   </div>
                 </div>
                 <p class="text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight" id="totalRemaining">RM--</p>
                 <p class="text-xs text-slate-400 dark:text-slate-500 mt-2">Combined active funds</p>
+              </div>
+
+              <!-- Financial Health Score Card -->
+              <div id="healthScoreCard" class="bg-white dark:bg-brand-dark-card rounded-3xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm relative overflow-hidden group hover:shadow-md transition-all flex flex-col justify-between items-center text-center">
+                <div class="flex items-center justify-between w-full mb-3">
+                  <span class="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Health Score</span>
+                  <div class="w-8 h-8 rounded-full bg-amber-100 dark:bg-amber-950/40 text-amber-500 flex items-center justify-center">
+                    <i data-lucide="activity" class="w-4 h-4"></i>
+                  </div>
+                </div>
+                <div class="relative flex items-center justify-center my-1">
+                  <svg class="w-20 h-24 transform -rotate-90" viewBox="0 0 100 100">
+                    <defs>
+                      <linearGradient id="gaugeGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" stop-color="#EF4444" />
+                        <stop offset="50%" stop-color="#F59E0B" />
+                        <stop offset="100%" stop-color="#10B981" />
+                      </linearGradient>
+                    </defs>
+                    <circle cx="50" cy="50" r="40" stroke="#E2E8F0" stroke-width="8" fill="transparent" class="dark:stroke-slate-800" />
+                    <circle id="gaugeProgressRing" cx="50" cy="50" r="40" stroke="url(#gaugeGradient)" stroke-width="8" fill="transparent"
+                            stroke-dasharray="251.2" stroke-dashoffset="251.2" stroke-linecap="round" class="transition-all duration-1000" />
+                  </svg>
+                  <span class="absolute text-xl font-black text-slate-900 dark:text-white" id="healthScoreNumber">--</span>
+                </div>
+                <p class="text-xs font-bold uppercase tracking-wider mt-1 text-slate-600 dark:text-slate-400" id="healthScoreText">Loading...</p>
               </div>
             </div>
 
@@ -364,6 +512,17 @@
                   </h3>
                   <div class="space-y-3" id="dashboardBankAccounts"></div>
                 </div>
+
+                <!-- Smart Budget Planner Card -->
+                <div id="budgetPlannerCard" class="bg-white dark:bg-brand-dark-card rounded-3xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm transition-all duration-300">
+                  <h3 class="text-sm font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-4 flex items-center gap-2">
+                    <i data-lucide="calculator" class="w-4 h-4 text-amber-500"></i> Budget vs Actual
+                  </h3>
+                  <div class="space-y-4" id="budgetCardContent">
+                    <p class="text-xs text-slate-400 dark:text-slate-500">Loading budget tracking...</p>
+                  </div>
+                </div>
+
                 <div class="bg-white dark:bg-brand-dark-card rounded-3xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm relative overflow-hidden">
                   <div class="absolute -right-4 -bottom-4 text-amber-500/10 dark:text-amber-500/5">
                     <i data-lucide="clock" class="w-32 h-32"></i>
@@ -483,13 +642,68 @@
 
           <!-- TAB 4: Analytics -->
           <div id="view-analytics" class="hidden space-y-8">
-            <div>
-              <h2 class="text-2xl font-bold text-slate-900 dark:text-white">Spending Analytics</h2>
-              <p class="text-sm text-slate-500 dark:text-slate-400">Graphical analysis of wallet distributions and monthly records</p>
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div>
+                <h2 class="text-2xl font-bold text-slate-900 dark:text-white">Spending Analytics</h2>
+                <p class="text-sm text-slate-500 dark:text-slate-400">Graphical analysis of wallet distributions and monthly records</p>
+              </div>
+              <button onclick="toggleComparisonMode()" class="px-4 py-2.5 bg-brand-yellow hover:bg-brand-yellow-hover text-slate-950 font-bold rounded-2xl shadow-md transition-all flex items-center gap-2 text-xs">
+                <i data-lucide="arrow-left-right" class="w-4 h-4"></i>
+                <span id="comparisonToggleText">Enable Comparison Mode</span>
+              </button>
+            </div>
+
+            <!-- Comparison Mode Panel -->
+            <div id="analyticsComparisonPanel" class="hidden space-y-6">
+              <div class="bg-white dark:bg-brand-dark-card rounded-3xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm">
+                <h3 class="text-sm font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-4 flex items-center gap-2">
+                  <i data-lucide="calendar" class="w-4 h-4 text-amber-500"></i> Select Comparison Periods
+                </h3>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                  <div>
+                    <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">Period 1 (Base Month)</label>
+                    <select id="compareMonth1Select" onchange="updateComparisonMetrics()" class="w-full px-4 py-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-brand-yellow"></select>
+                  </div>
+                  <div>
+                    <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">Period 2 (Comparison Month)</label>
+                    <select id="compareMonth2Select" onchange="updateComparisonMetrics()" class="w-full px-4 py-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-brand-yellow"></select>
+                  </div>
+                </div>
+              </div>
+
+              <!-- side by side table comparison -->
+              <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <div class="overflow-x-auto bg-white dark:bg-brand-dark-card rounded-3xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm">
+                  <h3 class="text-sm font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-4 flex items-center gap-2">
+                    <i data-lucide="table" class="w-4 h-4 text-amber-500"></i> Comparative Financial Metrics
+                  </h3>
+                  <table class="w-full text-left text-xs border-collapse">
+                    <thead>
+                      <tr class="border-b border-slate-200 dark:border-slate-800 text-slate-400">
+                        <th class="py-3 font-semibold uppercase tracking-wider">Metric (RM)</th>
+                        <th class="py-3 font-semibold uppercase tracking-wider" id="compareLabel1">Period 1</th>
+                        <th class="py-3 font-semibold uppercase tracking-wider" id="compareLabel2">Period 2</th>
+                        <th class="py-3 font-semibold uppercase tracking-wider">Difference</th>
+                      </tr>
+                    </thead>
+                    <tbody id="compareTableTbody"></tbody>
+                  </table>
+                </div>
+
+                <!-- Comparison Chart.js canvas -->
+                <div class="bg-white dark:bg-brand-dark-card rounded-3xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col justify-between">
+                  <h3 class="text-sm font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-4 flex items-center gap-2">
+                    <i data-lucide="bar-chart-2" class="w-4 h-4 text-amber-500"></i> Visual Comparison
+                  </h3>
+                  <div class="relative w-full h-64 sm:h-72 flex-1">
+                    <canvas id="comparisonChart"></canvas>
+                  </div>
+                </div>
+              </div>
             </div>
 
             <!-- Generate Monthly Financial Report Card -->
-            <div class="bg-gradient-to-r from-indigo-500/10 to-purple-500/5 dark:from-indigo-950/20 dark:to-purple-950/10 border border-indigo-500/30 rounded-3xl p-6 shadow-lg shadow-indigo-500/5 flex flex-col md:flex-row md:items-center justify-between gap-6 transition-all duration-300">
+            <div id="analyticsReportCard" class="bg-gradient-to-r from-indigo-500/10 to-purple-500/5 dark:from-indigo-950/20 dark:to-purple-950/10 border border-indigo-500/30 rounded-3xl p-6 shadow-lg shadow-indigo-500/5 flex flex-col md:flex-row md:items-center justify-between gap-6 transition-all duration-300">
               <div class="flex items-center gap-3">
                 <div class="p-3 bg-indigo-500/20 text-indigo-500 rounded-2xl">
                   <i data-lucide="file-text" class="w-6 h-6"></i>
@@ -503,13 +717,38 @@
                 <select id="reportMonthSelect" class="px-4 py-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl text-xs text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-indigo-500 min-w-[150px]">
                   <!-- Will populate dynamically with months -->
                 </select>
-                <button onclick="generateMonthlyPDFReport()" class="px-5 py-2.5 bg-indigo-500 hover:bg-indigo-600 text-white font-bold rounded-xl shadow-md transition-all flex items-center justify-center gap-2 text-xs">
-                  <i data-lucide="printer" class="w-4 h-4"></i> Generate PDF
+                <button onclick="generateMonthlyPDFReport()" class="px-5 py-2.5 bg-indigo-500 hover:bg-indigo-600 text-white font-bold rounded-xl shadow-md transition-all flex items-center justify-center gap-2 text-xs" title="Standard Monthly Report">
+                  <i data-lucide="printer" class="w-4 h-4"></i> Standard PDF
+                </button>
+                <button onclick="generateSignedStatementPDF()" class="px-5 py-2.5 bg-emerald-500 hover:bg-emerald-600 text-white font-bold rounded-xl shadow-md transition-all flex items-center justify-center gap-2 text-xs" title="Cryptographically Signed Bank-Style Statement">
+                  <i data-lucide="shield-check" class="w-4 h-4"></i> Signed PDF
                 </button>
               </div>
             </div>
 
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <!-- Verify Signed Statement Panel -->
+            <div class="bg-white dark:bg-brand-dark-card rounded-3xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm relative overflow-hidden">
+              <h3 class="text-sm font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-4 flex items-center gap-2">
+                <i data-lucide="shield-check" class="w-4 h-4 text-emerald-500"></i> Verify Statement Digital Signature
+              </h3>
+              <p class="text-xs text-slate-400 dark:text-slate-500 mb-4">
+                Validate the cryptographic signature of a bank-style monthly statement. Enter the select month and paste the signature hash from the statement PDF to compare with the current Google Sheet transaction history.
+              </p>
+              <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 items-end">
+                <div>
+                  <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">Month to Verify</label>
+                  <select id="verifyMonthSelect" class="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl text-xs text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-brand-yellow"></select>
+                </div>
+                <div class="sm:col-span-2 flex gap-3">
+                  <input type="text" id="verifyHashInput" placeholder="Paste 64-character SHA-256 Signature Hash..." class="flex-1 px-4 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl text-xs text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-brand-yellow">
+                  <button onclick="verifyStatementSignature()" class="px-5 py-2.5 bg-brand-yellow hover:bg-brand-yellow-hover text-slate-950 font-bold rounded-2xl shadow-md transition-all text-xs flex items-center gap-2">
+                    <i data-lucide="check-check" class="w-4 h-4"></i> Verify
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div id="analyticsStandardGrid" class="grid grid-cols-1 lg:grid-cols-3 gap-8">
               <div class="bg-white dark:bg-brand-dark-card rounded-3xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm">
                 <h3 class="text-sm font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-6">Expenses by Category</h3>
                 <div class="space-y-4">
@@ -589,6 +828,48 @@
             <div class="space-y-4" id="historyLedgerList"></div>
           </div>
 
+          <!-- TAB 5: Secure Notes Vault -->
+          <div id="view-vault" class="hidden space-y-6">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div>
+                <h2 class="text-2xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                  <i id="vaultLockIcon" data-lucide="lock" class="w-6 h-6 text-red-500"></i> Secure Notes Vault
+                </h2>
+                <p class="text-sm text-slate-500 dark:text-slate-400">Zero-knowledge end-to-end client-side AES-GCM encrypted note repository</p>
+              </div>
+              <div class="flex items-center gap-2" id="vaultActionControls"></div>
+            </div>
+
+            <!-- Lockscreen view -->
+            <div id="vaultLockscreen" class="bg-white dark:bg-brand-dark-card rounded-3xl p-8 border border-slate-200 dark:border-slate-800 shadow-sm max-w-md mx-auto text-center space-y-6">
+              <div class="w-16 h-16 bg-red-100 dark:bg-red-950/40 text-red-500 rounded-full flex items-center justify-center mx-auto">
+                <i data-lucide="lock" class="w-8 h-8"></i>
+              </div>
+              <div class="space-y-2">
+                <h3 class="text-lg font-bold text-slate-900 dark:text-white" id="vaultSetupTitle">Unlock Secure Vault</h3>
+                <p class="text-xs text-slate-500 dark:text-slate-400" id="vaultSetupDesc">Enter your master vault password to decrypt and access notes. If this is your first time, enter a password to initialize your secure vault.</p>
+              </div>
+              <form onsubmit="event.preventDefault(); submitUnlockVault();" class="space-y-4">
+                <input type="password" id="vaultPasswordInput" required placeholder="Enter Vault Password" class="w-full px-4 py-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl focus:ring-2 focus:ring-brand-yellow outline-none text-slate-900 dark:text-white text-center">
+                <button type="submit" class="w-full py-3 bg-brand-yellow hover:bg-brand-yellow-hover text-slate-950 font-bold rounded-2xl shadow-lg transition-all flex items-center justify-center gap-2">
+                  <i data-lucide="unlock" class="w-5 h-5"></i> Unlock Vault
+                </button>
+              </form>
+            </div>
+
+            <!-- Notes List View (Hidden by default until unlocked) -->
+            <div id="vaultUnlockedView" class="hidden space-y-6">
+              <div class="flex justify-between items-center bg-slate-50 dark:bg-slate-900/40 p-4 rounded-3xl border border-slate-200/50 dark:border-slate-800/50">
+                <span class="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Your Encrypted Notes</span>
+                <button onclick="openNoteModal()" class="px-4 py-2 bg-brand-yellow hover:bg-brand-yellow-hover text-slate-950 font-bold rounded-xl shadow-md transition-all flex items-center gap-2 text-xs">
+                  <i data-lucide="plus" class="w-4 h-4"></i> Add Note
+                </button>
+              </div>
+
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-6" id="vaultNotesGrid"></div>
+            </div>
+          </div>
+
           <!-- TAB 6: Settings -->
           <div id="view-settings" class="hidden space-y-8 max-w-2xl mx-auto w-full px-4 sm:px-0">
             <div>
@@ -623,6 +904,183 @@
                     </label>
                   </div>
                 </div>
+              </div>
+
+              <div class="h-px bg-slate-150 dark:bg-slate-800 my-4"></div>
+
+              <!-- Premium Sound Packs & Volume -->
+              <div>
+                <h3 class="text-base font-bold text-slate-900 dark:text-white mb-2">Premium Audio Settings</h3>
+                <p class="text-xs text-slate-400 dark:text-slate-500 mb-4">Select your UI sound pack, customize master volume, and toggle granular feedback for different actions.</p>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                  <div>
+                    <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">Sound Pack</label>
+                    <select id="settingSoundPack" onchange="changeSoundPack(this.value)" class="w-full px-4 py-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl outline-none focus:ring-2 focus:ring-brand-yellow text-slate-900 dark:text-white text-xs">
+                      <option value="classic">Classic (Subtle Haptics)</option>
+                      <option value="modern">Modern (High-tech Sines)</option>
+                      <option value="minimal">Minimal (Short Triangle Blips)</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">Master Volume (<span id="volumeValueLabel">50%</span>)</label>
+                    <div class="flex items-center gap-3 py-1">
+                      <i data-lucide="volume-1" class="w-4 h-4 text-slate-400"></i>
+                      <input type="range" id="settingMasterVolume" min="0" max="100" value="50" oninput="changeMasterVolume(this.value)" class="flex-1 h-2 bg-slate-200 dark:bg-slate-800 rounded-lg appearance-none cursor-pointer accent-brand-yellow">
+                      <i data-lucide="volume-2" class="w-4 h-4 text-slate-400"></i>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="mt-4">
+                  <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-3">Granular Event Audio Toggles</label>
+                  <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                    <label class="flex items-center gap-2 p-2 bg-slate-50 dark:bg-slate-900 border rounded-xl cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 select-none">
+                      <input type="checkbox" id="soundToggle_login" onchange="toggleEventSound('login')" checked class="rounded border-slate-300 dark:border-slate-800 text-brand-yellow focus:ring-brand-yellow">
+                      <span class="text-[10px] font-semibold text-slate-600 dark:text-slate-350">Login Success</span>
+                    </label>
+                    <label class="flex items-center gap-2 p-2 bg-slate-50 dark:bg-slate-900 border rounded-xl cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 select-none">
+                      <input type="checkbox" id="soundToggle_newMonth" onchange="toggleEventSound('newMonth')" checked class="rounded border-slate-300 dark:border-slate-800 text-brand-yellow focus:ring-brand-yellow">
+                      <span class="text-[10px] font-semibold text-slate-600 dark:text-slate-350">New Month</span>
+                    </label>
+                    <label class="flex items-center gap-2 p-2 bg-slate-50 dark:bg-slate-900 border rounded-xl cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 select-none">
+                      <input type="checkbox" id="soundToggle_saveChanges" onchange="toggleEventSound('saveChanges')" checked class="rounded border-slate-300 dark:border-slate-800 text-brand-yellow focus:ring-brand-yellow">
+                      <span class="text-[10px] font-semibold text-slate-600 dark:text-slate-350">Save Changes</span>
+                    </label>
+                    <label class="flex items-center gap-2 p-2 bg-slate-50 dark:bg-slate-900 border rounded-xl cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 select-none">
+                      <input type="checkbox" id="soundToggle_requestTransfer" onchange="toggleEventSound('requestTransfer')" checked class="rounded border-slate-300 dark:border-slate-800 text-brand-yellow focus:ring-brand-yellow">
+                      <span class="text-[10px] font-semibold text-slate-600 dark:text-slate-350">Request Transfer</span>
+                    </label>
+                    <label class="flex items-center gap-2 p-2 bg-slate-50 dark:bg-slate-900 border rounded-xl cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 select-none">
+                      <input type="checkbox" id="soundToggle_useSavings" onchange="toggleEventSound('useSavings')" checked class="rounded border-slate-300 dark:border-slate-800 text-brand-yellow focus:ring-brand-yellow">
+                      <span class="text-[10px] font-semibold text-slate-600 dark:text-slate-350">Use Savings</span>
+                    </label>
+                    <label class="flex items-center gap-2 p-2 bg-slate-50 dark:bg-slate-900 border rounded-xl cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 select-none">
+                      <input type="checkbox" id="soundToggle_topUp" onchange="toggleEventSound('topUp')" checked class="rounded border-slate-300 dark:border-slate-800 text-brand-yellow focus:ring-brand-yellow">
+                      <span class="text-[10px] font-semibold text-slate-600 dark:text-slate-350">Top Up Savings</span>
+                    </label>
+                    <label class="flex items-center gap-2 p-2 bg-slate-50 dark:bg-slate-900 border rounded-xl cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 select-none">
+                      <input type="checkbox" id="soundToggle_addExpense" onchange="toggleEventSound('addExpense')" checked class="rounded border-slate-300 dark:border-slate-800 text-brand-yellow focus:ring-brand-yellow">
+                      <span class="text-[10px] font-semibold text-slate-600 dark:text-slate-350">Add Expense</span>
+                    </label>
+                    <label class="flex items-center gap-2 p-2 bg-slate-50 dark:bg-slate-900 border rounded-xl cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 select-none">
+                      <input type="checkbox" id="soundToggle_confirm" onchange="toggleEventSound('confirm')" checked class="rounded border-slate-300 dark:border-slate-800 text-brand-yellow focus:ring-brand-yellow">
+                      <span class="text-[10px] font-semibold text-slate-600 dark:text-slate-350">Modal Confirm</span>
+                    </label>
+                    <label class="flex items-center gap-2 p-2 bg-slate-50 dark:bg-slate-900 border rounded-xl cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 select-none">
+                      <input type="checkbox" id="soundToggle_cancel" onchange="toggleEventSound('cancel')" checked class="rounded border-slate-300 dark:border-slate-800 text-brand-yellow focus:ring-brand-yellow">
+                      <span class="text-[10px] font-semibold text-slate-600 dark:text-slate-350">Cancel Action</span>
+                    </label>
+                    <label class="flex items-center gap-2 p-2 bg-slate-50 dark:bg-slate-900 border rounded-xl cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 select-none">
+                      <input type="checkbox" id="soundToggle_undo" onchange="toggleEventSound('undo')" checked class="rounded border-slate-300 dark:border-slate-800 text-brand-yellow focus:ring-brand-yellow">
+                      <span class="text-[10px] font-semibold text-slate-600 dark:text-slate-350">Undo Action</span>
+                    </label>
+                    <label class="flex items-center gap-2 p-2 bg-slate-50 dark:bg-slate-900 border rounded-xl cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 select-none">
+                      <input type="checkbox" id="soundToggle_redo" onchange="toggleEventSound('redo')" checked class="rounded border-slate-300 dark:border-slate-800 text-brand-yellow focus:ring-brand-yellow">
+                      <span class="text-[10px] font-semibold text-slate-600 dark:text-slate-350">Redo Action</span>
+                    </label>
+                    <label class="flex items-center gap-2 p-2 bg-slate-50 dark:bg-slate-900 border rounded-xl cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 select-none">
+                      <input type="checkbox" id="soundToggle_copy" onchange="toggleEventSound('copy')" checked class="rounded border-slate-300 dark:border-slate-800 text-brand-yellow focus:ring-brand-yellow">
+                      <span class="text-[10px] font-semibold text-slate-600 dark:text-slate-350">Clipboard Copy</span>
+                    </label>
+                    <label class="flex items-center gap-2 p-2 bg-slate-50 dark:bg-slate-900 border rounded-xl cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 select-none">
+                      <input type="checkbox" id="soundToggle_tabSwitch" onchange="toggleEventSound('tabSwitch')" checked class="rounded border-slate-300 dark:border-slate-800 text-brand-yellow focus:ring-brand-yellow">
+                      <span class="text-[10px] font-semibold text-slate-600 dark:text-slate-350">Tab Switch</span>
+                    </label>
+                    <label class="flex items-center gap-2 p-2 bg-slate-50 dark:bg-slate-900 border rounded-xl cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 select-none">
+                      <input type="checkbox" id="soundToggle_themeToggle" onchange="toggleEventSound('themeToggle')" checked class="rounded border-slate-300 dark:border-slate-800 text-brand-yellow focus:ring-brand-yellow">
+                      <span class="text-[10px] font-semibold text-slate-600 dark:text-slate-350">Theme Toggle</span>
+                    </label>
+                    <label class="flex items-center gap-2 p-2 bg-slate-50 dark:bg-slate-900 border rounded-xl cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 select-none">
+                      <input type="checkbox" id="soundToggle_speakAloud" onchange="toggleEventSound('speakAloud')" checked class="rounded border-slate-300 dark:border-slate-800 text-brand-yellow focus:ring-brand-yellow">
+                      <span class="text-[10px] font-semibold text-slate-600 dark:text-slate-350">Speak Aloud</span>
+                    </label>
+                  </div>
+                </div>
+              </div>
+
+              <div class="h-px bg-slate-150 dark:bg-slate-800 my-4"></div>
+
+              <!-- Theme Customisation Section -->
+              <div>
+                <h3 class="text-base font-bold text-slate-900 dark:text-white mb-2">Theme Customisation</h3>
+                <p class="text-xs text-slate-400 dark:text-slate-500 mb-4">Choose a preset theme pack or select a custom primary accent color to personalize your interface.</p>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <!-- Custom color picker -->
+                  <div class="p-4 bg-slate-50 dark:bg-slate-900/60 rounded-2xl border border-slate-200 dark:border-slate-800">
+                    <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">Custom Accent Color</label>
+                    <div class="flex items-center gap-3">
+                      <input type="color" id="themeColorPicker" oninput="handleCustomColorInput(this.value)" class="w-12 h-10 border-0 rounded-lg cursor-pointer bg-transparent">
+                      <input type="text" id="themeColorText" oninput="handleCustomColorInput(this.value)" class="flex-1 px-3 py-1.5 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-sm uppercase text-slate-900 dark:text-white" placeholder="#FBBF24">
+                    </div>
+                  </div>
+
+                  <!-- Theme presets -->
+                  <div class="p-4 bg-slate-50 dark:bg-slate-900/60 rounded-2xl border border-slate-200 dark:border-slate-800">
+                    <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">Preset Themes</label>
+                    <div class="grid grid-cols-2 gap-2">
+                      <button onclick="applyThemePack('sunset')" class="px-3 py-2 bg-gradient-to-r from-amber-500 to-yellow-400 text-slate-950 font-bold text-xs rounded-xl shadow-sm hover:scale-[1.02] active:scale-[0.98] transition-all">Sunset</button>
+                      <button onclick="applyThemePack('forest')" class="px-3 py-2 bg-gradient-to-r from-emerald-600 to-teal-500 text-white font-bold text-xs rounded-xl shadow-sm hover:scale-[1.02] active:scale-[0.98] transition-all">Forest</button>
+                      <button onclick="applyThemePack('ocean')" class="px-3 py-2 bg-gradient-to-r from-sky-600 to-blue-500 text-white font-bold text-xs rounded-xl shadow-sm hover:scale-[1.02] active:scale-[0.98] transition-all">Ocean</button>
+                      <button onclick="applyThemePack('minimalist')" class="px-3 py-2 bg-gradient-to-r from-slate-600 to-slate-500 text-white font-bold text-xs rounded-xl shadow-sm hover:scale-[1.02] active:scale-[0.98] transition-all">Minimalist</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="h-px bg-slate-150 dark:bg-slate-800 my-4"></div>
+
+              <!-- Budget Planner Section -->
+              <div>
+                <h3 class="text-base font-bold text-slate-900 dark:text-white mb-2">Budget Planner</h3>
+                <p class="text-xs text-slate-400 dark:text-slate-500 mb-4">Configure your monthly budget thresholds. Spending values will compare refills and savings usage against these limits.</p>
+
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-6">
+                  <div>
+                    <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">Total Monthly Budget (RM)</label>
+                    <input type="number" id="settingBudgetTotal" step="0.01" class="w-full px-4 py-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl focus:ring-2 focus:ring-brand-yellow focus:border-brand-yellow outline-none text-slate-900 dark:text-white" placeholder="0.00">
+                  </div>
+                  <div>
+                    <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">Refills Budget (RM)</label>
+                    <input type="number" id="settingBudgetRefills" step="0.01" class="w-full px-4 py-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl focus:ring-2 focus:ring-brand-yellow focus:border-brand-yellow outline-none text-slate-900 dark:text-white" placeholder="0.00">
+                  </div>
+                  <div>
+                    <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">Savings Usage Budget (RM)</label>
+                    <input type="number" id="settingBudgetSavingsUsage" step="0.01" class="w-full px-4 py-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl focus:ring-2 focus:ring-brand-yellow focus:border-brand-yellow outline-none text-slate-900 dark:text-white" placeholder="0.00">
+                  </div>
+                </div>
+              </div>
+
+              <div class="h-px bg-slate-150 dark:bg-slate-800 my-4"></div>
+
+              <!-- Share Dashboard Link Section -->
+              <div>
+                <h3 class="text-base font-bold text-slate-900 dark:text-white mb-2">Share Dashboard</h3>
+                <p class="text-xs text-slate-400 dark:text-slate-500 mb-4">Generate secure, temporary read-only links to share balance figures and the Money Flow diagram without requiring full admin credentials.</p>
+
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-6 items-end">
+                  <div>
+                    <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">Expiry Duration</label>
+                    <select id="settingShareExpiry" class="w-full px-4 py-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl focus:ring-2 focus:ring-brand-yellow outline-none text-slate-900 dark:text-white text-xs">
+                      <option value="1">1 Hour</option>
+                      <option value="6">6 Hours</option>
+                      <option value="24" selected>24 Hours</option>
+                      <option value="168">7 Days</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">Optional Password</label>
+                    <input type="password" id="settingSharePassword" placeholder="Keep empty for no password" class="w-full px-4 py-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl focus:ring-2 focus:ring-brand-yellow outline-none text-slate-900 dark:text-white text-xs">
+                  </div>
+                  <div>
+                    <button onclick="generateSharedLink()" class="w-full py-3 bg-brand-yellow hover:bg-brand-yellow-hover text-slate-950 font-bold rounded-2xl shadow-lg transition-all flex items-center justify-center gap-2 text-xs">
+                      <i data-lucide="link" class="w-4 h-4"></i> Generate Share Link
+                    </button>
+                  </div>
+                </div>
+
+                <div class="mt-6 space-y-3" id="sharedLinksContainer"></div>
               </div>
 
               <div class="h-px bg-slate-150 dark:bg-slate-800 my-4"></div>
@@ -744,6 +1202,28 @@
   </div>
 
   <!-- MODALS -->
+  <!-- SECURE NOTE MODAL -->
+  <div id="secureNoteModal" class="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-slate-900/60 backdrop-blur-sm hidden">
+    <div class="bg-white dark:bg-brand-dark-card w-full max-w-md mx-0 sm:mx-4 p-6 rounded-t-[2.5rem] sm:rounded-3xl border border-slate-200 dark:border-slate-800 shadow-2xl relative">
+      <h3 class="text-lg font-bold text-slate-900 dark:text-white mb-2" id="noteModalTitle">Create Secure Note</h3>
+      <form onsubmit="event.preventDefault(); submitSaveNote();" class="space-y-4">
+        <input type="hidden" id="noteModalId">
+        <div>
+          <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">Note Title</label>
+          <input type="text" id="noteModalTitleInput" required class="w-full px-4 py-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl focus:ring-2 focus:ring-brand-yellow outline-none text-slate-900 dark:text-white" placeholder="Passwords, Passphrases, Personal Info...">
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">Note Content</label>
+          <textarea id="noteModalContentInput" rows="5" required class="w-full px-4 py-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl focus:ring-2 focus:ring-brand-yellow outline-none text-slate-900 dark:text-white text-sm" placeholder="Write confidential info..."></textarea>
+        </div>
+        <div class="flex gap-3">
+          <button type="button" onclick="closeNoteModal()" class="flex-1 py-3 bg-slate-100 dark:bg-slate-800 rounded-2xl text-slate-700 dark:text-slate-300">Cancel</button>
+          <button type="submit" class="flex-1 py-3 bg-brand-yellow rounded-2xl font-bold">Save Encrypted</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <div id="newMonthModal" class="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-slate-900/60 backdrop-blur-sm hidden">
     <div class="bg-white dark:bg-brand-dark-card w-full max-w-md mx-0 sm:mx-4 p-6 rounded-t-[2.5rem] sm:rounded-3xl border border-slate-200 dark:border-slate-700 shadow-2xl relative">
       <h3 class="text-lg font-bold text-slate-900 dark:text-white mb-2">Process New Month</h3>
@@ -874,8 +1354,130 @@
   </div>
 
   <script>
-    // ----- Web Audio API Sound System -----
+    // ----- Global State Declarations -----
     let audioCtx = null;
+    const API = '/api';
+    let token = null;
+    let dashboardData = null;
+    let historyData = [];
+    let budgetSettings = null;
+    window.budgetAlertShown = false;
+    let isComparisonMode = false;
+    let comparisonChartInstance = null;
+    let transactionData = [];
+
+    function uuid() {
+      return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+        var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
+        return v.toString(16);
+      });
+    }
+
+    // ----- Dynamic Theme Customisation System -----
+    function hexToRgb(hex) {
+      hex = hex.replace(/^#/, '');
+      if (hex.length === 3) {
+        hex = hex[0]+hex[0]+hex[1]+hex[1]+hex[2]+hex[2];
+      }
+      const num = parseInt(hex, 16);
+      return { r: (num >> 16) & 255, g: (num >> 8) & 255, b: num & 255 };
+    }
+
+    function rgbToHex(r, g, b) {
+      return "#" + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1);
+    }
+
+    function adjustBrightness(hex, percent) {
+      try {
+        const rgb = hexToRgb(hex);
+        let r = Math.round(rgb.r * (1 + percent));
+        let g = Math.round(rgb.g * (1 + percent));
+        let b = Math.round(rgb.b * (1 + percent));
+        r = Math.min(255, Math.max(0, r));
+        g = Math.min(255, Math.max(0, g));
+        b = Math.min(255, Math.max(0, b));
+        return rgbToHex(r, g, b);
+      } catch (e) {
+        return hex;
+      }
+    }
+
+    function applyThemePack(pack, customColor = null, save = true) {
+      let baseColor = '#FBBF24';
+      if (pack === 'sunset') baseColor = '#FBBF24';
+      else if (pack === 'forest') baseColor = '#10B981';
+      else if (pack === 'ocean') baseColor = '#0284C7';
+      else if (pack === 'minimalist') baseColor = '#64748B';
+      else if (pack === 'custom') baseColor = customColor || '#FBBF24';
+
+      const hoverColor = adjustBrightness(baseColor, -0.15);
+      const c100 = adjustBrightness(baseColor, 0.7);
+      const c200 = adjustBrightness(baseColor, 0.5);
+      const c400 = adjustBrightness(baseColor, 0.15);
+      const c900 = adjustBrightness(baseColor, -0.6);
+
+      const root = document.documentElement;
+      root.style.setProperty('--brand-accent', baseColor);
+      root.style.setProperty('--brand-accent-hover', hoverColor);
+      root.style.setProperty('--brand-accent-100', c100);
+      root.style.setProperty('--brand-accent-200', c200);
+      root.style.setProperty('--brand-accent-400', c400);
+      root.style.setProperty('--brand-accent-900', c900);
+
+      if (pack === 'forest') {
+        root.style.setProperty('--brand-bg-light', '#F0FDF4');
+        root.style.setProperty('--brand-bg-dark', '#022C22');
+        root.style.setProperty('--brand-card-dark', '#064E3B');
+      } else if (pack === 'ocean') {
+        root.style.setProperty('--brand-bg-light', '#F0F9FF');
+        root.style.setProperty('--brand-bg-dark', '#083344');
+        root.style.setProperty('--brand-card-dark', '#155E75');
+      } else if (pack === 'minimalist') {
+        root.style.setProperty('--brand-bg-light', '#F8FAFC');
+        root.style.setProperty('--brand-bg-dark', '#0F172A');
+        root.style.setProperty('--brand-card-dark', '#1E293B');
+      } else {
+        root.style.setProperty('--brand-bg-light', '#F1F5F9');
+        root.style.setProperty('--brand-bg-dark', '#0F172A');
+        root.style.setProperty('--brand-card-dark', '#1E293B');
+      }
+
+      const picker = document.getElementById('themeColorPicker');
+      const text = document.getElementById('themeColorText');
+      if (picker) picker.value = baseColor;
+      if (text) text.value = baseColor;
+
+      if (save) {
+        localStorage.setItem('theme_pack', pack);
+        if (pack === 'custom') {
+          localStorage.setItem('theme_custom_color', baseColor);
+        }
+      }
+
+      if (typeof renderAnalyticsPage === 'function') {
+        renderAnalyticsPage();
+      }
+      if (isComparisonMode && typeof updateComparisonMetrics === 'function') {
+        updateComparisonMetrics();
+      }
+    }
+
+    function handleCustomColorInput(val) {
+      if (/^#[0-9A-F]{6}$/i.test(val) || /^#[0-9A-F]{3}$/i.test(val)) {
+        applyThemePack('custom', val, true);
+      }
+    }
+
+    function initTheme() {
+      const pack = localStorage.getItem('theme_pack') || 'sunset';
+      const customColor = localStorage.getItem('theme_custom_color');
+      applyThemePack(pack, customColor, false);
+    }
+
+    // Initialize Theme immediately to prevent flash
+    initTheme();
+
+    // ----- Web Audio API Sound System -----
     function getAudioContext() {
       if (!audioCtx) {
         audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -890,8 +1492,12 @@
       return localStorage.getItem('sounds_muted') === 'true';
     }
 
-    // Play subtle haptic sounds (under 200ms, low volume)
-    function playSoftClick() {
+    function getVolumeMultiplier() {
+      const vol = parseFloat(localStorage.getItem('sound_master_volume') || '50');
+      return vol / 100;
+    }
+
+    function playSoftClickInternal() {
       if (isMuted()) return;
       try {
         const ctx = getAudioContext();
@@ -900,53 +1506,119 @@
         osc.connect(gainNode);
         gainNode.connect(ctx.destination);
 
-        osc.type = 'sine';
-        osc.frequency.setValueAtTime(800, ctx.currentTime);
-        osc.frequency.exponentialRampToValueAtTime(150, ctx.currentTime + 0.04);
+        const pack = localStorage.getItem('sound_pack') || 'classic';
+        const vol = 0.04 * getVolumeMultiplier();
 
-        gainNode.gain.setValueAtTime(0.04, ctx.currentTime);
-        gainNode.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.04);
-
-        osc.start();
-        osc.stop(ctx.currentTime + 0.05);
+        if (pack === 'modern') {
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(1200, ctx.currentTime);
+          osc.frequency.exponentialRampToValueAtTime(300, ctx.currentTime + 0.03);
+          gainNode.gain.setValueAtTime(vol * 1.5, ctx.currentTime);
+          gainNode.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.03);
+          osc.start();
+          osc.stop(ctx.currentTime + 0.04);
+        } else if (pack === 'minimal') {
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(400, ctx.currentTime);
+          gainNode.gain.setValueAtTime(vol * 0.8, ctx.currentTime);
+          gainNode.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.02);
+          osc.start();
+          osc.stop(ctx.currentTime + 0.025);
+        } else {
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(800, ctx.currentTime);
+          osc.frequency.exponentialRampToValueAtTime(150, ctx.currentTime + 0.04);
+          gainNode.gain.setValueAtTime(vol, ctx.currentTime);
+          gainNode.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.04);
+          osc.start();
+          osc.stop(ctx.currentTime + 0.05);
+        }
       } catch (e) {
         console.warn('Audio play failed:', e);
       }
     }
 
-    function playChime() {
+    function playChimeInternal() {
       if (isMuted()) return;
       try {
         const ctx = getAudioContext();
         const now = ctx.currentTime;
+        const pack = localStorage.getItem('sound_pack') || 'classic';
+        const vol = 0.015 * getVolumeMultiplier();
 
-        const osc1 = ctx.createOscillator();
-        const gain1 = ctx.createGain();
-        osc1.type = 'sine';
-        osc1.frequency.setValueAtTime(987.77, now); // B5
-        osc1.connect(gain1);
-        gain1.connect(ctx.destination);
-        gain1.gain.setValueAtTime(0.015, now);
-        gain1.gain.exponentialRampToValueAtTime(0.0001, now + 0.12);
-        osc1.start(now);
-        osc1.stop(now + 0.13);
+        if (pack === 'modern') {
+          const osc1 = ctx.createOscillator();
+          const gain1 = ctx.createGain();
+          osc1.type = 'sine';
+          osc1.frequency.setValueAtTime(1500, now);
+          osc1.connect(gain1);
+          gain1.connect(ctx.destination);
+          gain1.gain.setValueAtTime(vol * 1.2, now);
+          gain1.gain.exponentialRampToValueAtTime(0.0001, now + 0.1);
+          osc1.start(now);
+          osc1.stop(now + 0.11);
 
-        const osc2 = ctx.createOscillator();
-        const gain2 = ctx.createGain();
-        osc2.type = 'sine';
-        osc2.frequency.setValueAtTime(1318.51, now + 0.03); // E6, slightly delayed
-        osc2.connect(gain2);
-        gain2.connect(ctx.destination);
-        gain2.gain.setValueAtTime(0.015, now + 0.03);
-        gain2.gain.exponentialRampToValueAtTime(0.0001, now + 0.15);
-        osc2.start(now + 0.03);
-        osc2.stop(now + 0.16);
+          const osc2 = ctx.createOscillator();
+          const gain2 = ctx.createGain();
+          osc2.type = 'sine';
+          osc2.frequency.setValueAtTime(1800, now + 0.04);
+          osc2.connect(gain2);
+          gain2.connect(ctx.destination);
+          gain2.gain.setValueAtTime(vol * 1.2, now + 0.04);
+          gain2.gain.exponentialRampToValueAtTime(0.0001, now + 0.14);
+          osc2.start(now + 0.04);
+          osc2.stop(now + 0.15);
+        } else if (pack === 'minimal') {
+          const osc1 = ctx.createOscillator();
+          const gain1 = ctx.createGain();
+          osc1.type = 'triangle';
+          osc1.frequency.setValueAtTime(600, now);
+          osc1.connect(gain1);
+          gain1.connect(ctx.destination);
+          gain1.gain.setValueAtTime(vol * 0.8, now);
+          gain1.gain.exponentialRampToValueAtTime(0.0001, now + 0.06);
+          osc1.start(now);
+          osc1.stop(now + 0.07);
+
+          const osc2 = ctx.createOscillator();
+          const gain2 = ctx.createGain();
+          osc2.type = 'triangle';
+          osc2.frequency.setValueAtTime(800, now + 0.03);
+          osc2.connect(gain2);
+          gain2.connect(ctx.destination);
+          gain2.gain.setValueAtTime(vol * 0.8, now + 0.03);
+          gain2.gain.exponentialRampToValueAtTime(0.0001, now + 0.09);
+          osc2.start(now + 0.03);
+          osc2.stop(now + 0.1);
+        } else {
+          const osc1 = ctx.createOscillator();
+          const gain1 = ctx.createGain();
+          osc1.type = 'sine';
+          osc1.frequency.setValueAtTime(987.77, now);
+          osc1.connect(gain1);
+          gain1.connect(ctx.destination);
+          gain1.gain.setValueAtTime(vol, now);
+          gain1.gain.exponentialRampToValueAtTime(0.0001, now + 0.12);
+          osc1.start(now);
+          osc1.stop(now + 0.13);
+
+          const osc2 = ctx.createOscillator();
+          const gain2 = ctx.createGain();
+          osc2.type = 'sine';
+          osc2.frequency.setValueAtTime(1318.51, now + 0.03);
+          osc2.connect(gain2);
+          gain2.connect(ctx.destination);
+          gain2.gain.setValueAtTime(vol, now + 0.03);
+          gain2.gain.exponentialRampToValueAtTime(0.0001, now + 0.15);
+          osc2.start(now + 0.03);
+          osc2.stop(now + 0.16);
+        }
       } catch (e) {
         console.warn('Audio play failed:', e);
       }
     }
 
-    function playThud() {
+    function playThudInternal() {
       if (isMuted()) return;
       try {
         const ctx = getAudioContext();
@@ -955,21 +1627,40 @@
         osc.connect(gainNode);
         gainNode.connect(ctx.destination);
 
-        osc.type = 'sine';
-        osc.frequency.setValueAtTime(130, ctx.currentTime);
-        osc.frequency.exponentialRampToValueAtTime(45, ctx.currentTime + 0.15);
+        const pack = localStorage.getItem('sound_pack') || 'classic';
+        const vol = 0.1 * getVolumeMultiplier();
 
-        gainNode.gain.setValueAtTime(0.1, ctx.currentTime);
-        gainNode.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.15);
-
-        osc.start();
-        osc.stop(ctx.currentTime + 0.16);
+        if (pack === 'modern') {
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(180, ctx.currentTime);
+          osc.frequency.exponentialRampToValueAtTime(60, ctx.currentTime + 0.12);
+          gainNode.gain.setValueAtTime(vol * 1.2, ctx.currentTime);
+          gainNode.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.12);
+          osc.start();
+          osc.stop(ctx.currentTime + 0.13);
+        } else if (pack === 'minimal') {
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(100, ctx.currentTime);
+          osc.frequency.exponentialRampToValueAtTime(40, ctx.currentTime + 0.08);
+          gainNode.gain.setValueAtTime(vol * 0.7, ctx.currentTime);
+          gainNode.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.08);
+          osc.start();
+          osc.stop(ctx.currentTime + 0.09);
+        } else {
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(130, ctx.currentTime);
+          osc.frequency.exponentialRampToValueAtTime(45, ctx.currentTime + 0.15);
+          gainNode.gain.setValueAtTime(vol, ctx.currentTime);
+          gainNode.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.15);
+          osc.start();
+          osc.stop(ctx.currentTime + 0.16);
+        }
       } catch (e) {
         console.warn('Audio play failed:', e);
       }
     }
 
-    function playCopyTick() {
+    function playCopyTickInternal() {
       if (isMuted()) return;
       try {
         const ctx = getAudioContext();
@@ -978,24 +1669,96 @@
         osc.connect(gainNode);
         gainNode.connect(ctx.destination);
 
-        osc.type = 'sine';
-        osc.frequency.setValueAtTime(2200, ctx.currentTime);
-        osc.frequency.exponentialRampToValueAtTime(1000, ctx.currentTime + 0.02);
+        const pack = localStorage.getItem('sound_pack') || 'classic';
+        const vol = 0.03 * getVolumeMultiplier();
 
-        gainNode.gain.setValueAtTime(0.03, ctx.currentTime);
-        gainNode.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.02);
-
-        osc.start();
-        osc.stop(ctx.currentTime + 0.03);
+        if (pack === 'modern') {
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(2600, ctx.currentTime);
+          osc.frequency.exponentialRampToValueAtTime(1200, ctx.currentTime + 0.015);
+          gainNode.gain.setValueAtTime(vol * 1.2, ctx.currentTime);
+          gainNode.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.015);
+          osc.start();
+          osc.stop(ctx.currentTime + 0.02);
+        } else if (pack === 'minimal') {
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(1800, ctx.currentTime);
+          gainNode.gain.setValueAtTime(vol * 0.6, ctx.currentTime);
+          gainNode.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.01);
+          osc.start();
+          osc.stop(ctx.currentTime + 0.012);
+        } else {
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(2200, ctx.currentTime);
+          osc.frequency.exponentialRampToValueAtTime(1000, ctx.currentTime + 0.02);
+          gainNode.gain.setValueAtTime(vol, ctx.currentTime);
+          gainNode.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.02);
+          osc.start();
+          osc.stop(ctx.currentTime + 0.03);
+        }
       } catch (e) {
         console.warn('Audio play failed:', e);
       }
     }
 
-    const API = '/api';
-    let token = null;
-    let dashboardData = null;
-    let historyData = [];
+    function playSoftClick() { playSoftClickInternal(); }
+    function playChime() { playChimeInternal(); }
+    function playThud() { playThudInternal(); }
+    function playCopyTick() { playCopyTickInternal(); }
+
+    function playSoundEvent(eventId) {
+      if (isMuted()) return;
+      const enabled = localStorage.getItem('sound_toggle_' + eventId) !== 'false';
+      if (!enabled) return;
+
+      if (eventId === 'login' || eventId === 'newMonth' || eventId === 'saveChanges' || eventId === 'topUp' || eventId === 'redo' || eventId === 'confirm') {
+        playChimeInternal();
+      } else if (eventId === 'useSavings' || eventId === 'addExpense' || eventId === 'cancel' || eventId === 'undo') {
+        playThudInternal();
+      } else if (eventId === 'copy') {
+        playCopyTickInternal();
+      } else {
+        playSoftClickInternal();
+      }
+    }
+
+    function speakBalance(title, amount) {
+      if (isMuted()) return;
+      const enabled = localStorage.getItem('sound_toggle_speakAloud') !== 'false';
+      if (!enabled) return;
+
+      try {
+        const text = `${title} is ${formatMoney(amount).replace('RM', 'RM')}`;
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.rate = 0.9;
+        utterance.pitch = 1.0;
+        utterance.volume = getVolumeMultiplier();
+        window.speechSynthesis.speak(utterance);
+        playSoundEvent('speakAloud');
+      } catch (e) {
+        console.warn('Speech synthesis failed:', e);
+      }
+    }
+
+    function changeSoundPack(val) {
+      localStorage.setItem('sound_pack', val);
+      playChimeInternal();
+    }
+
+    function changeMasterVolume(val) {
+      localStorage.setItem('sound_master_volume', val);
+      const label = document.getElementById('volumeValueLabel');
+      if (label) label.textContent = val + '%';
+      playSoftClickInternal();
+    }
+
+    function toggleEventSound(eventId) {
+      const checkbox = document.getElementById('soundToggle_' + eventId);
+      if (checkbox) {
+        localStorage.setItem('sound_toggle_' + eventId, checkbox.checked ? 'true' : 'false');
+      }
+      playSoftClickInternal();
+    }
 
     let currentCurrency = 'MYR';
     let currencyRates = { MYR: 1 };
@@ -1022,7 +1785,6 @@
       const symbol = CURRENCY_SYMBOLS[currentCurrency] || currentCurrency;
       return `${symbol}${converted.toFixed(2)}`;
     }
-    let transactionData = [];
     let undoStack = [];
     let redoStack = [];
 
@@ -1146,14 +1908,34 @@
     function initApp() {
       document.getElementById('loginScreen').classList.add('hidden');
       document.getElementById('mainDashboard').classList.remove('hidden');
+      initTheme();
       initSoundSettings();
       switchTab('dashboard');
       loadAllAppData();
       startLiveTracking();
+      playSoundEvent('login');
     }
 
     function logout() {
       token = null;
+      vaultPassword = '';
+      vaultKey = null;
+      encryptedNotesList = [];
+      window.budgetAlertShown = false;
+      const passIn = document.getElementById('vaultPasswordInput');
+      if (passIn) passIn.value = '';
+      const vLock = document.getElementById('vaultLockscreen');
+      if (vLock) vLock.classList.remove('hidden');
+      const vUnlock = document.getElementById('vaultUnlockedView');
+      if (vUnlock) vUnlock.classList.add('hidden');
+      const lockIcon = document.getElementById('vaultLockIcon');
+      if (lockIcon) {
+        lockIcon.setAttribute('data-lucide', 'lock');
+        lockIcon.className = "w-6 h-6 text-red-500";
+      }
+      const vAction = document.getElementById('vaultActionControls');
+      if (vAction) vAction.innerHTML = '';
+
       document.getElementById('mainDashboard').classList.add('hidden');
       document.getElementById('loginScreen').classList.remove('hidden');
     }
@@ -1178,16 +1960,18 @@
       if (userInitiated) {
         playSoftClick();
       }
-      const views = ['dashboard', 'transactions', 'transfers', 'analytics', 'history', 'settings'];
+      const views = ['dashboard', 'transactions', 'transfers', 'analytics', 'history', 'vault', 'settings'];
       views.forEach(v => {
-        document.getElementById(`view-${v}`).classList.add('hidden');
+        const el = document.getElementById(`view-${v}`);
+        if (el) el.classList.add('hidden');
         const btn = document.getElementById(`tabBtn-${v}`);
         if (btn) btn.className = "nav-tab w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-medium transition-all duration-150 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800";
 
         const mBtn = document.getElementById(`mobileTabBtn-${v}`);
         if (mBtn) mBtn.className = "flex flex-col items-center gap-1 text-slate-500 hover:text-amber-500 transition-colors py-1 px-3 w-16 h-12 justify-center";
       });
-      document.getElementById(`view-${tabId}`).classList.remove('hidden');
+      const targetEl = document.getElementById(`view-${tabId}`);
+      if (targetEl) targetEl.classList.remove('hidden');
       const activeBtn = document.getElementById(`tabBtn-${tabId}`);
       if (activeBtn) activeBtn.className = "nav-tab w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-semibold transition-all duration-150 bg-brand-yellow text-slate-950 shadow-md";
 
@@ -1198,6 +1982,7 @@
       else if (tabId === 'transactions') renderTransactionsPage();
       else if (tabId === 'transfers') renderTransfersPage();
       else if (tabId === 'analytics') renderAnalyticsPage();
+      else if (tabId === 'vault') renderVaultPage();
 
       toggleSidebar(false);
     }
@@ -1224,7 +2009,7 @@
 
     function copyToClipboard(text, elementId) {
       navigator.clipboard.writeText(text).then(() => {
-        playCopyTick();
+        playSoundEvent('copy');
         const btn = document.getElementById(elementId);
         if (btn) { const orig = btn.innerHTML; btn.innerHTML = `<i data-lucide="check" class="w-4 h-4 text-emerald-500"></i>`; lucide.createIcons(); setTimeout(() => { btn.innerHTML = orig; lucide.createIcons(); }, 1500); }
       });
@@ -1237,7 +2022,7 @@
 
     function setTheme(mode, userInitiated = false) {
       if (userInitiated) {
-        playSoftClick();
+        playSoundEvent('themeToggle');
       }
       const light = document.getElementById('theme-light'), dark = document.getElementById('theme-dark'), sys = document.getElementById('theme-system');
       light.className = "flex-1 py-1.5 rounded-xl flex items-center justify-center text-slate-500 hover:text-slate-950 transition-all";
@@ -1541,10 +2326,11 @@
     async function loadAllAppData() {
       showSkeletons();
       try {
-        const [dashRes, txRes, histRes] = await Promise.all([
+        const [dashRes, txRes, histRes, budgetRes] = await Promise.all([
           fetch(`${API}?action=getDashboard`, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({token})}),
           fetch(`${API}?action=getTransactions`, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({token})}),
-          fetch(`${API}?action=getHistory`, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({token})})
+          fetch(`${API}?action=getHistory`, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({token})}),
+          fetch(`${API}?action=getBudgetSettings`, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({token})})
         ]);
         dashboardData = await dashRes.json();
         if (dashboardData && dashboardData.currencySettings) {
@@ -1552,6 +2338,7 @@
           currencyRates = dashboardData.currencySettings.rates || { MYR: 1 };
         }
         transactionData = await txRes.json();
+        budgetSettings = await budgetRes.json();
         historyData = await histRes.json();
         historyData.sort((a,b) => new Date(a.timestamp) - new Date(b.timestamp));
         undoStack = historyData.filter(h => !h.undone);
@@ -1636,6 +2423,10 @@
       if (document.getElementById('reportMonthSelect')) {
         document.getElementById('reportMonthSelect').innerHTML = dashboardData.allowanceStats.map(s => `<option value="${s.month}">${s.month}</option>`).join('');
       }
+      if (document.getElementById('verifyMonthSelect')) {
+        document.getElementById('verifyMonthSelect').innerHTML = dashboardData.allowanceStats.map(s => `<option value="${s.month}">${s.month}</option>`).join('');
+      }
+      loadSharedLinks();
 
       document.getElementById('topUndoBtn').disabled = (undoStack.length === 0);
       document.getElementById('topRedoBtn').disabled = (redoStack.length === 0);
@@ -1681,8 +2472,200 @@
       }
 
       checkBudgetThresholds();
+
+      if (budgetSettings) {
+        document.getElementById('settingBudgetTotal').value = budgetSettings.total || '';
+        document.getElementById('settingBudgetRefills').value = budgetSettings.refills || '';
+        document.getElementById('settingBudgetSavingsUsage').value = budgetSettings.savings_usage || '';
+      }
+      updateBudgetPlannerUI();
+      calculateFinancialHealthScore();
+
       generateSmartInsights();
       lucide.createIcons();
+    }
+
+    // ----- Smart Budget Planner System -----
+    function getActualSpendingThisMonth() {
+      if (!transactionData) return { refills: 0, savings_usage: 0, total: 0 };
+      const now = new Date();
+      const currentMonth = now.getMonth(); // 0-11
+      const currentYear = now.getFullYear();
+
+      let refillsSum = 0;
+      let savingsUsageSum = 0;
+
+      transactionData.forEach(t => {
+        const d = new Date(t.date);
+        if (d.getMonth() === currentMonth && d.getFullYear() === currentYear) {
+          if (t.type === 'refill') {
+            refillsSum += t.amount;
+          } else if (t.type === 'savings_usage') {
+            savingsUsageSum += t.amount;
+          }
+        }
+      });
+
+      return {
+        refills: refillsSum,
+        savings_usage: savingsUsageSum,
+        total: refillsSum + savingsUsageSum
+      };
+    }
+
+    function updateBudgetPlannerUI() {
+      const card = document.getElementById('budgetPlannerCard');
+      const content = document.getElementById('budgetCardContent');
+      if (!card || !content) return;
+
+      if (!budgetSettings || !budgetSettings.total) {
+        content.innerHTML = `
+          <div class="text-center py-4">
+            <p class="text-xs text-slate-400 dark:text-slate-500">No active budget. Set budgets in settings!</p>
+          </div>
+        `;
+        card.classList.remove('pulsing-red-border');
+        return;
+      }
+
+      const actual = getActualSpendingThisMonth();
+
+      const renderBar = (label, spent, budget) => {
+        if (!budget) return '';
+        const pct = Math.min((spent / budget) * 100, 100);
+        const isOver90 = (spent / budget) >= 0.9;
+        const barColor = isOver90 ? 'bg-red-500' : 'bg-amber-500';
+        return `
+          <div>
+            <div class="flex justify-between text-xs mb-1">
+              <span class="font-medium text-slate-700 dark:text-slate-300">${label}</span>
+              <span class="font-bold text-slate-900 dark:text-white">${formatMoney(spent)} / ${formatMoney(budget)} (${Math.round(spent/budget*100)}%)</span>
+            </div>
+            <div class="h-2.5 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+              <div class="${barColor} h-full rounded-full transition-all duration-500" style="width: ${pct}%"></div>
+            </div>
+          </div>
+        `;
+      };
+
+      let html = '';
+      html += renderBar('Total Spending', actual.total, budgetSettings.total);
+      html += renderBar('Refills (Spending)', actual.refills, budgetSettings.refills);
+      html += renderBar('Savings Usage (Spending)', actual.savings_usage, budgetSettings.savings_usage);
+
+      content.innerHTML = html;
+
+      const totalPct = actual.total / budgetSettings.total;
+      if (totalPct >= 0.9) {
+        card.classList.add('pulsing-red-border');
+        if (!window.budgetAlertShown) {
+          showToast(`Warning: Monthly spending is at ${Math.round(totalPct*100)}% of your total budget!`, 'warning');
+          window.budgetAlertShown = true;
+        }
+      } else {
+        card.classList.remove('pulsing-red-border');
+      }
+    }
+
+    function calculateFinancialHealthScore() {
+      if (!dashboardData || !transactionData) return;
+
+      // 1. Savings Rate (40 points)
+      let totalSavings = 0;
+      let totalIncome = 0;
+      if (dashboardData.allowanceStats && dashboardData.allowanceStats.length > 0) {
+        dashboardData.allowanceStats.forEach(s => {
+          totalSavings += (s.savings || 0);
+          totalIncome += (s.allowance || 0);
+        });
+      }
+      let savingsRate = totalIncome > 0 ? (totalSavings / totalIncome) * 100 : 0;
+      let savingsPoints = 0;
+      if (savingsRate >= 20) {
+        savingsPoints = 40;
+      } else if (savingsRate > 0) {
+        savingsPoints = (savingsRate / 20) * 40;
+      }
+
+      // 2. Spending Consistency (20 points)
+      const spendsByMonth = {};
+      transactionData.forEach(t => {
+        if (t.type === 'refill' || t.type === 'savings_usage') {
+          const d = new Date(t.date);
+          const key = `${d.getFullYear()}-${d.getMonth()}`;
+          spendsByMonth[key] = (spendsByMonth[key] || 0) + t.amount;
+        }
+      });
+      const spends = Object.values(spendsByMonth);
+      let consistencyPoints = 20;
+      if (spends.length > 1) {
+        const mean = spends.reduce((a, b) => a + b, 0) / spends.length;
+        const variance = spends.reduce((a, b) => a + Math.pow(b - mean, 2), 0) / spends.length;
+        const stdDev = Math.sqrt(variance);
+        const cv = mean > 0 ? (stdDev / mean) : 0;
+        if (cv <= 0.2) consistencyPoints = 20;
+        else if (cv <= 0.5) consistencyPoints = 15;
+        else if (cv <= 1.0) consistencyPoints = 10;
+        else consistencyPoints = 5;
+      }
+
+      // 3. Refill Frequency (20 points)
+      const refillsByMonth = {};
+      let totalRefills = 0;
+      transactionData.forEach(t => {
+        if (t.type === 'refill') {
+          const d = new Date(t.date);
+          const key = `${d.getFullYear()}-${d.getMonth()}`;
+          refillsByMonth[key] = (refillsByMonth[key] || 0) + 1;
+          totalRefills++;
+        }
+      });
+      const refillMonths = Object.keys(refillsByMonth).length;
+      const avgRefills = refillMonths > 0 ? (totalRefills / refillMonths) : 0;
+      let frequencyPoints = 20;
+      if (avgRefills > 0) {
+        if (avgRefills <= 2) frequencyPoints = 20;
+        else if (avgRefills <= 4) frequencyPoints = 15;
+        else if (avgRefills <= 6) frequencyPoints = 10;
+        else frequencyPoints = 5;
+      }
+
+      // 4. Budget Adherence (20 points)
+      let budgetPoints = 20;
+      if (budgetSettings && budgetSettings.total > 0) {
+        const actualSpending = getActualSpendingThisMonth().total;
+        if (actualSpending > budgetSettings.total) {
+          budgetPoints = 0;
+        }
+      }
+
+      const totalScore = Math.round(savingsPoints + consistencyPoints + frequencyPoints + budgetPoints);
+
+      // Update circular gauge
+      const ring = document.getElementById('gaugeProgressRing');
+      const numText = document.getElementById('healthScoreNumber');
+      const labelText = document.getElementById('healthScoreText');
+
+      if (ring && numText && labelText) {
+        const offset = 251.2 * (1 - totalScore / 100);
+        ring.style.strokeDashoffset = offset;
+        numText.textContent = totalScore;
+
+        let label = 'Needs Attention';
+        let colorClass = 'text-red-500';
+        if (totalScore >= 90) {
+          label = 'Excellent';
+          colorClass = 'text-emerald-500';
+        } else if (totalScore >= 70) {
+          label = 'Good';
+          colorClass = 'text-amber-500';
+        } else if (totalScore >= 50) {
+          label = 'Fair';
+          colorClass = 'text-yellow-500';
+        }
+        labelText.textContent = label;
+        labelText.className = `text-xs font-bold uppercase tracking-wider mt-1 ${colorClass}`;
+      }
     }
 
     // ----- Budget Threshold Alerts -----
@@ -2063,6 +3046,314 @@
       }
     }
 
+    async function sha256(message) {
+      const msgBuffer = new TextEncoder().encode(message);
+      const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+      const hashArray = Array.from(new Uint8Array(hashBuffer));
+      const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+      return hashHex;
+    }
+
+    function getMonthTransactions(monthLabel) {
+      if (!transactionData) return [];
+      return transactionData.filter(t => {
+        const d = new Date(t.date);
+        const label = d.toLocaleString('default', { month: 'long', year: 'numeric' });
+        return label.trim().toLowerCase() === monthLabel.trim().toLowerCase();
+      }).sort((a, b) => new Date(a.date) - new Date(b.date));
+    }
+
+    function getMonthTransactionsString(monthLabel) {
+      const txs = getMonthTransactions(monthLabel);
+      return txs.map(t => `${t.date}:${t.type}:${t.amount}:${t.note || ''}`).join('|');
+    }
+
+    async function generateSignedStatementPDF() {
+      const selectMonth = document.getElementById('reportMonthSelect').value;
+      if (!selectMonth) {
+        showToast('Please select a valid month.', 'error');
+        return;
+      }
+
+      showToast('Generating cryptographically signed statement...', 'info');
+
+      try {
+        const txStr = getMonthTransactionsString(selectMonth);
+        const hashHex = await sha256(txStr);
+
+        const qr = qrcode(0, 'M');
+        qr.addData(hashHex);
+        qr.make();
+        const qrImgData = qr.createDataURL(4);
+
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF('p', 'pt', 'a4');
+
+        const primaryColor = '#10B981';
+        const slateColor = '#1E293B';
+        const lightGray = '#F1F5F9';
+        const darkGray = '#475569';
+
+        // 1. HEADER
+        doc.setFillColor(16, 185, 129);
+        doc.rect(0, 0, 595, 80, 'F');
+
+        doc.setTextColor(255, 255, 255);
+        doc.setFont('Helvetica', 'bold');
+        doc.setFontSize(22);
+        doc.text('Allowance Manager', 40, 48);
+
+        doc.setFont('Helvetica', 'normal');
+        doc.setFontSize(10);
+        doc.text('Cryptographically Signed Statement', 40, 63);
+
+        doc.setFontSize(12);
+        doc.setFont('Helvetica', 'bold');
+        doc.text(selectMonth.toUpperCase(), 450, 48);
+
+        // 2. METRICS
+        doc.setTextColor(slateColor);
+        doc.setFontSize(14);
+        doc.setFont('Helvetica', 'bold');
+        doc.text('Monthly Performance Metrics', 40, 115);
+
+        const mStat = dashboardData.allowanceStats.find(s => s.month === selectMonth) || {};
+        const allowanceAmount = mStat.allowance || 430;
+        const usageAmount = mStat.usage || 0;
+        const remainingAmount = mStat.balance || 0;
+        const savingsAmount = mStat.savings || 30;
+
+        doc.setDrawColor(226, 232, 240);
+        doc.setFillColor(248, 250, 252);
+        doc.roundedRect(40, 130, 515, 60, 8, 8, 'FD');
+
+        doc.setFontSize(9);
+        doc.setTextColor(darkGray);
+        doc.setFont('Helvetica', 'normal');
+        doc.text('Allowance Allocation', 60, 153);
+        doc.text('Expenses/Refills', 190, 153);
+        doc.text('Monthly Savings', 320, 153);
+        doc.text('Mama Vault Balance', 440, 153);
+
+        doc.setFontSize(12);
+        doc.setFont('Helvetica', 'bold');
+        doc.setTextColor(slateColor);
+        doc.text(formatMoney(allowanceAmount), 60, 172);
+        doc.setTextColor(239, 68, 68);
+        doc.text(formatMoney(usageAmount), 190, 172);
+        doc.setTextColor(16, 185, 129);
+        doc.text(formatMoney(savingsAmount), 320, 172);
+        doc.setTextColor(primaryColor);
+        doc.text(formatMoney(remainingAmount), 440, 172);
+
+        // 3. PIE CHART GENERATION
+        const refillsVal = getConvertedAmount(usageAmount);
+        const savingsVal = getConvertedAmount(savingsAmount);
+        const remainingVal = getConvertedAmount(remainingAmount);
+
+        const chartCanvas = document.createElement('canvas');
+        chartCanvas.width = 300;
+        chartCanvas.height = 300;
+        chartCanvas.style.position = 'absolute';
+        chartCanvas.style.left = '-9999px';
+        document.body.appendChild(chartCanvas);
+
+        const chartCtx = chartCanvas.getContext('2d');
+        const tempChart = new Chart(chartCtx, {
+          type: 'pie',
+          data: {
+            labels: ['Usage/Refills', 'Savings', 'Remaining'],
+            datasets: [{
+              data: [refillsVal, savingsVal, remainingVal],
+              backgroundColor: ['#EF4444', '#10B981', '#10B981']
+            }]
+          },
+          options: {
+            animation: false,
+            responsive: false,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: { position: 'bottom' }
+            }
+          }
+        });
+
+        await new Promise(r => setTimeout(r, 150));
+
+        const chartImgData = chartCanvas.toDataURL('image/png');
+        tempChart.destroy();
+        document.body.removeChild(chartCanvas);
+
+        doc.setTextColor(slateColor);
+        doc.setFontSize(14);
+        doc.setFont('Helvetica', 'bold');
+        doc.text('Spending Category Distribution', 40, 215);
+        doc.addImage(chartImgData, 'PNG', 147, 230, 300, 150);
+
+        // 4. TRANSACTION LOG TABLE
+        doc.setFontSize(14);
+        doc.setFont('Helvetica', 'bold');
+        doc.text('Transaction Activity Ledger', 40, 410);
+
+        const filteredTx = getMonthTransactions(selectMonth);
+
+        doc.setFillColor(241, 245, 249);
+        doc.rect(40, 425, 515, 22, 'F');
+        doc.setFontSize(9);
+        doc.setFont('Helvetica', 'bold');
+        doc.setTextColor(darkGray);
+        doc.text('Date', 50, 439);
+        doc.text('Type', 150, 439);
+        doc.text('Amount', 250, 439);
+        doc.text('Note/Description', 350, 439);
+
+        let currentY = 460;
+        doc.setFont('Helvetica', 'normal');
+        doc.setTextColor(slateColor);
+
+        filteredTx.forEach((tx, index) => {
+          if (currentY > 740) {
+            doc.addPage();
+            currentY = 50;
+
+            doc.setFillColor(241, 245, 249);
+            doc.rect(40, currentY - 15, 515, 22, 'F');
+            doc.setFont('Helvetica', 'bold');
+            doc.setTextColor(darkGray);
+            doc.text('Date', 50, currentY - 1);
+            doc.text('Type', 150, currentY - 1);
+            doc.text('Amount', 250, currentY - 1);
+            doc.text('Note/Description', 350, currentY - 1);
+            doc.setFont('Helvetica', 'normal');
+            doc.setTextColor(slateColor);
+            currentY += 15;
+          }
+
+          const dateStr = new Date(tx.date).toLocaleDateString('en-GB');
+          const isOut = tx.type === 'refill' || tx.type === 'savings_usage';
+          const amtStr = (isOut ? '-' : '+') + formatMoney(tx.amount);
+
+          doc.text(dateStr, 50, currentY);
+          doc.text(tx.type.toUpperCase(), 150, currentY);
+
+          if (isOut) {
+            doc.setTextColor(220, 38, 38);
+          } else {
+            doc.setTextColor(16, 185, 129);
+          }
+          doc.text(amtStr, 250, currentY);
+          doc.setTextColor(slateColor);
+
+          const noteStr = tx.note || '';
+          const truncatedNote = noteStr.length > 25 ? noteStr.substring(0, 22) + '...' : noteStr;
+          doc.text(truncatedNote, 350, currentY);
+
+          doc.setDrawColor(241, 245, 249);
+          doc.line(40, currentY + 6, 555, currentY + 6);
+
+          currentY += 18;
+        });
+
+        // 5. BANK ACCOUNTS & SIGNATURE
+        doc.addPage();
+        currentY = 60;
+
+        doc.setTextColor(slateColor);
+        doc.setFontSize(14);
+        doc.setFont('Helvetica', 'bold');
+        doc.text('Configured Bank Details (Custodian)', 40, currentY);
+
+        currentY += 25;
+        doc.setFontSize(9);
+        doc.setFont('Helvetica', 'normal');
+        doc.setTextColor(darkGray);
+
+        dashboardData.bankAccounts.forEach(bank => {
+          doc.text(`${bank.name}: ${bank.number}`, 50, currentY);
+          currentY += 15;
+        });
+
+        // Add Digital Signature Section
+        currentY += 30;
+        doc.setDrawColor(16, 185, 129);
+        doc.setFillColor(240, 253, 250);
+        doc.roundedRect(40, currentY, 515, 130, 8, 8, 'FD');
+
+        currentY += 20;
+        doc.setTextColor(15, 23, 42);
+        doc.setFont('Helvetica', 'bold');
+        doc.setFontSize(12);
+        doc.text('Cryptographic Authenticity Verification', 60, currentY);
+
+        currentY += 15;
+        doc.setFont('Helvetica', 'normal');
+        doc.setFontSize(8);
+        doc.setTextColor(71, 85, 105);
+        doc.text('This statement is digitally signed with a unique SHA-256 hash generated directly from the monthly', 60, currentY);
+        currentY += 10;
+        doc.text('transaction history records. Any alteration to transaction values, dates, or types will invalidate the signature.', 60, currentY);
+
+        currentY += 20;
+        doc.setFont('Courier', 'bold');
+        doc.setFontSize(8);
+        doc.setTextColor(16, 185, 129);
+        doc.text(`SHA-256 SIGNATURE HASH:`, 60, currentY);
+        currentY += 12;
+        doc.setTextColor(15, 23, 42);
+        doc.text(hashHex.substring(0, 32), 60, currentY);
+        currentY += 10;
+        doc.text(hashHex.substring(32), 60, currentY);
+
+        doc.addImage(qrImgData, 'PNG', 450, currentY - 67, 80, 80);
+
+        doc.setDrawColor(226, 232, 240);
+        doc.line(40, 780, 555, 780);
+        doc.setFontSize(8);
+        doc.setTextColor(148, 163, 184);
+        doc.text('Allowance Manager - Generated on ' + new Date().toLocaleString(), 40, 795);
+        doc.text('Cryptographically Signed', 450, 795);
+
+        const sanitizedMonth = selectMonth.replace(/\s+/g, '');
+        doc.save(`Allowance_SignedStatement_${sanitizedMonth}.pdf`);
+        showToast('Cryptographically signed statement generated!', 'success');
+      } catch (err) {
+        console.error('Error generating signed PDF:', err);
+        showToast('Failed to generate signed PDF.', 'error');
+      }
+    }
+
+    async function verifyStatementSignature() {
+      playSoftClick();
+      const month = document.getElementById('verifyMonthSelect').value;
+      const inputHash = document.getElementById('verifyHashInput').value.trim().toLowerCase();
+
+      if (!month || !inputHash) {
+        showToast('Please select a month and paste a signature hash to verify.', 'error');
+        return;
+      }
+
+      if (inputHash.length !== 64) {
+        showToast('Invalid SHA-256 signature hash. Must be 64 hexadecimal characters.', 'error');
+        return;
+      }
+
+      showToast('Computing current transaction ledger hash...', 'info');
+
+      try {
+        const txStr = getMonthTransactionsString(month);
+        const computedHash = await sha256(txStr);
+
+        if (computedHash === inputHash) {
+          showToast(`Signature verified! The statement is authentic and matches the current ledger for ${month}.`, 'success');
+        } else {
+          showToast(`Verification failed! The signature hash does not match current transaction records for ${month}.`, 'error');
+        }
+      } catch (err) {
+        console.error(err);
+        showToast('Error during signature verification', 'error');
+      }
+    }
+
     let trendsChartInstance = null;
 
     function parseMonthYearLabel(label) {
@@ -2160,6 +3451,793 @@
       });
     }
 
+    function toggleComparisonMode() {
+      playSoftClick();
+      isComparisonMode = !isComparisonMode;
+      const btnText = document.getElementById('comparisonToggleText');
+      const panel = document.getElementById('analyticsComparisonPanel');
+      const standardGrid = document.getElementById('analyticsStandardGrid');
+      const reportCard = document.getElementById('analyticsReportCard');
+
+      if (isComparisonMode) {
+        if (btnText) btnText.textContent = "Disable Comparison Mode";
+        if (panel) panel.classList.remove('hidden');
+        if (standardGrid) standardGrid.classList.add('hidden');
+        if (reportCard) reportCard.classList.add('hidden');
+
+        if (dashboardData && dashboardData.allowanceStats) {
+          const select1 = document.getElementById('compareMonth1Select');
+          const select2 = document.getElementById('compareMonth2Select');
+          const months = dashboardData.allowanceStats.map(s => s.month);
+
+          if (select1 && select2) {
+            const optionsHtml = months.map(m => `<option value="${m}">${m}</option>`).join('');
+            select1.innerHTML = optionsHtml;
+            select2.innerHTML = optionsHtml;
+
+            if (months.length > 1) {
+              select1.selectedIndex = 0;
+              select2.selectedIndex = 1;
+            }
+          }
+        }
+        updateComparisonMetrics();
+      } else {
+        if (btnText) btnText.textContent = "Enable Comparison Mode";
+        if (panel) panel.classList.add('hidden');
+        if (standardGrid) standardGrid.classList.remove('hidden');
+        if (reportCard) reportCard.classList.remove('hidden');
+      }
+    }
+
+    function getMonthMetrics(monthLabel) {
+      if (!dashboardData) return { allowance: 0, refills: 0, savingsUsage: 0, income: 0, savings: 0, netBalance: 0 };
+
+      const stats = dashboardData.allowanceStats.find(s => s.month.trim().toLowerCase() === monthLabel.trim().toLowerCase()) || {};
+      const savStats = dashboardData.savingsStats.find(s => s.month.trim().toLowerCase() === monthLabel.trim().toLowerCase()) || {};
+
+      let totalAllowance = stats.allowance || 0;
+      let savingsAmount = stats.savings || 0;
+
+      let totalRefills = 0;
+      let savingsUsage = 0;
+      let income = 0;
+
+      if (transactionData) {
+        transactionData.forEach(t => {
+          const d = new Date(t.date);
+          const label = d.toLocaleString('default', { month: 'long', year: 'numeric' });
+          if (label.trim().toLowerCase() === monthLabel.trim().toLowerCase()) {
+            if (t.type === 'refill') totalRefills += t.amount;
+            else if (t.type === 'savings_usage') savingsUsage += t.amount;
+            else if (t.type === 'income') income += t.amount;
+          }
+        });
+      }
+
+      let netBalance = totalAllowance - totalRefills - savingsUsage;
+
+      return {
+        allowance: totalAllowance,
+        refills: totalRefills,
+        savingsUsage: savingsUsage,
+        income: income || (totalAllowance - savingsAmount),
+        savings: savingsAmount,
+        netBalance: netBalance
+      };
+    }
+
+    function updateComparisonMetrics() {
+      if (!isComparisonMode || !dashboardData) return;
+
+      const m1Label = document.getElementById('compareMonth1Select')?.value;
+      const m2Label = document.getElementById('compareMonth2Select')?.value;
+
+      if (!m1Label || !m2Label) return;
+
+      document.getElementById('compareLabel1').textContent = m1Label;
+      document.getElementById('compareLabel2').textContent = m2Label;
+
+      const m1 = getMonthMetrics(m1Label);
+      const m2 = getMonthMetrics(m2Label);
+
+      const formatDiff = (diff) => {
+        if (diff === 0) return `<span class="text-slate-500 font-bold">--</span>`;
+        const sign = diff > 0 ? '+' : '';
+        const color = diff > 0 ? 'text-emerald-500' : 'text-red-500';
+        return `<span class="${color} font-bold">${sign}${formatMoney(diff)}</span>`;
+      };
+
+      const tableRows = [
+        { name: 'Total Allowance', v1: m1.allowance, v2: m2.allowance },
+        { name: 'Total Refills', v1: m1.refills, v2: m2.refills },
+        { name: 'Savings Usage', v1: m1.savingsUsage, v2: m2.savingsUsage },
+        { name: 'Income', v1: m1.income, v2: m2.income },
+        { name: 'Savings Amount', v1: m1.savings, v2: m2.savings },
+        { name: 'Net Balance', v1: m1.netBalance, v2: m2.netBalance }
+      ];
+
+      document.getElementById('compareTableTbody').innerHTML = tableRows.map(r => {
+        const diff = r.v2 - r.v1;
+        return `
+          <tr class="border-b border-slate-100 dark:border-slate-800">
+            <td class="py-3 font-medium text-slate-700 dark:text-slate-300">${r.name}</td>
+            <td class="py-3 font-semibold text-slate-900 dark:text-white">${formatMoney(r.v1)}</td>
+            <td class="py-3 font-semibold text-slate-900 dark:text-white">${formatMoney(r.v2)}</td>
+            <td class="py-3 font-bold">${formatDiff(diff)}</td>
+          </tr>
+        `;
+      }).join('');
+
+      const canvas = document.getElementById('comparisonChart');
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return;
+
+      if (comparisonChartInstance) {
+        comparisonChartInstance.destroy();
+      }
+
+      const isDark = document.documentElement.classList.contains('dark');
+      const textColor = isDark ? '#94A3B8' : '#64748B';
+      const gridColor = isDark ? '#334155' : '#E2E8F0';
+
+      const brandAccent = getComputedStyle(document.documentElement).getPropertyValue('--brand-accent').trim() || '#FBBF24';
+      const secondaryColor = '#3B82F6';
+
+      comparisonChartInstance = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: ['Allowance', 'Refills', 'Savings Usage', 'Income', 'Savings', 'Net Balance'],
+          datasets: [
+            {
+              label: m1Label,
+              data: [
+                getConvertedAmount(m1.allowance),
+                getConvertedAmount(m1.refills),
+                getConvertedAmount(m1.savingsUsage),
+                getConvertedAmount(m1.income),
+                getConvertedAmount(m1.savings),
+                getConvertedAmount(m1.netBalance)
+              ],
+              backgroundColor: brandAccent,
+              borderRadius: 6
+            },
+            {
+              label: m2Label,
+              data: [
+                getConvertedAmount(m2.allowance),
+                getConvertedAmount(m2.refills),
+                getConvertedAmount(m2.savingsUsage),
+                getConvertedAmount(m2.income),
+                getConvertedAmount(m2.savings),
+                getConvertedAmount(m2.netBalance)
+              ],
+              backgroundColor: secondaryColor,
+              borderRadius: 6
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              labels: { color: textColor, font: { family: 'Inter', weight: '600' } }
+            }
+          },
+          scales: {
+            x: {
+              grid: { display: false },
+              ticks: { color: textColor, font: { family: 'Inter' } }
+            },
+            y: {
+              grid: { color: gridColor },
+              ticks: {
+                color: textColor,
+                font: { family: 'Inter' },
+                callback: function(value) { return (CURRENCY_SYMBOLS[currentCurrency] || currentCurrency) + value; }
+              }
+            }
+          }
+        }
+      });
+    }
+
+    // ----- Cryptography & Vault System -----
+    let vaultPassword = '';
+    let vaultKey = null;
+    let encryptedNotesList = [];
+
+    async function deriveKey(password, saltHex) {
+      const encoder = new TextEncoder();
+      const passwordKey = await crypto.subtle.importKey(
+        'raw',
+        encoder.encode(password),
+        { name: 'PBKDF2' },
+        false,
+        ['deriveKey']
+      );
+
+      const salt = hexToUint8Array(saltHex);
+      return crypto.subtle.deriveKey(
+        {
+          name: 'PBKDF2',
+          salt: salt,
+          iterations: 100000,
+          hash: 'SHA-256'
+        },
+        passwordKey,
+        { name: 'AES-GCM', length: 256 },
+        false,
+        ['encrypt', 'decrypt']
+      );
+    }
+
+    async function encryptText(text, key, saltHex) {
+      const encoder = new TextEncoder();
+      const iv = crypto.getRandomValues(new Uint8Array(12));
+      const encrypted = await crypto.subtle.encrypt(
+        { name: 'AES-GCM', iv: iv },
+        key,
+        encoder.encode(text)
+      );
+
+      return {
+        encryptedHex: bufToHex(encrypted),
+        ivHex: bufToHex(iv),
+        saltHex: saltHex
+      };
+    }
+
+    async function decryptText(encryptedHex, key, ivHex) {
+      const encrypted = hexToUint8Array(encryptedHex);
+      const iv = hexToUint8Array(ivHex);
+      try {
+        const decrypted = await crypto.subtle.decrypt(
+          { name: 'AES-GCM', iv: iv },
+          key,
+          encrypted
+        );
+        const decoder = new TextDecoder();
+        return decoder.decode(decrypted);
+      } catch (e) {
+        throw new Error('Decryption failed');
+      }
+    }
+
+    function bufToHex(buf) {
+      return Array.from(new Uint8Array(buf))
+        .map(b => b.toString(16).padStart(2, '0'))
+        .join('');
+    }
+
+    function hexToUint8Array(hex) {
+      const arr = new Uint8Array(hex.length / 2);
+      for (let i = 0; i < arr.length; i++) {
+        arr[i] = parseInt(hex.substr(i * 2, 2), 16);
+      }
+      return arr;
+    }
+
+    function generateRandomHex(length) {
+      const arr = crypto.getRandomValues(new Uint8Array(length));
+      return bufToHex(arr);
+    }
+
+    async function submitUnlockVault() {
+      playSoftClick();
+      const passInput = document.getElementById('vaultPasswordInput');
+      const pass = passInput.value;
+      if (!pass) return;
+
+      try {
+        const res = await fetch(`${API}?action=getSecureNotes`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ token })
+        });
+        const notes = await res.json();
+
+        if (notes.error) {
+          showToast(notes.error, 'error');
+          return;
+        }
+
+        encryptedNotesList = notes;
+
+        let derived = null;
+        let testDecrypted = true;
+
+        if (notes.length > 0) {
+          const first = notes[0];
+          try {
+            derived = await deriveKey(pass, first.salt);
+            const decryptedDataStr = await decryptText(first.encrypted_data, derived, first.iv);
+            JSON.parse(decryptedDataStr);
+          } catch (e) {
+            testDecrypted = false;
+          }
+        } else {
+          const salt = generateRandomHex(16);
+          derived = await deriveKey(pass, salt);
+        }
+
+        if (testDecrypted) {
+          vaultPassword = pass;
+          vaultKey = derived;
+
+          document.getElementById('vaultLockscreen').classList.add('hidden');
+          document.getElementById('vaultUnlockedView').classList.remove('hidden');
+
+          const lockIcon = document.getElementById('vaultLockIcon');
+          if (lockIcon) {
+            lockIcon.setAttribute('data-lucide', 'unlock-keyhole');
+            lockIcon.className = "w-6 h-6 text-emerald-500";
+            lucide.createIcons();
+          }
+
+          document.getElementById('vaultActionControls').innerHTML = `
+            <button onclick="lockVault()" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold rounded-xl text-xs flex items-center gap-1.5 transition-all">
+              <i data-lucide="lock" class="w-3.5 h-3.5"></i> Lock Vault
+            </button>
+          `;
+          lucide.createIcons();
+
+          renderVaultPage();
+          showToast('Secure Vault unlocked successfully', 'success');
+        } else {
+          showToast('Invalid vault password. Try again.', 'error');
+        }
+      } catch (err) {
+        console.error(err);
+        showToast('Connection error unlocking vault', 'error');
+      }
+    }
+
+    function lockVault() {
+      playSoftClick();
+      vaultPassword = '';
+      vaultKey = null;
+      encryptedNotesList = [];
+      document.getElementById('vaultPasswordInput').value = '';
+      document.getElementById('vaultLockscreen').classList.remove('hidden');
+      document.getElementById('vaultUnlockedView').classList.add('hidden');
+
+      const lockIcon = document.getElementById('vaultLockIcon');
+      if (lockIcon) {
+        lockIcon.setAttribute('data-lucide', 'lock');
+        lockIcon.className = "w-6 h-6 text-red-500";
+        lucide.createIcons();
+      }
+      document.getElementById('vaultActionControls').innerHTML = '';
+      showToast('Vault locked', 'info');
+    }
+
+    async function renderVaultPage() {
+      if (!vaultKey) {
+        document.getElementById('vaultLockscreen').classList.remove('hidden');
+        document.getElementById('vaultUnlockedView').classList.add('hidden');
+        return;
+      }
+
+      const grid = document.getElementById('vaultNotesGrid');
+      if (encryptedNotesList.length === 0) {
+        grid.innerHTML = `
+          <div class="col-span-full text-center py-12 bg-white dark:bg-brand-dark-card border rounded-3xl">
+            <i data-lucide="file-text" class="w-12 h-12 text-slate-300 dark:text-slate-600 mx-auto mb-3"></i>
+            <p class="text-sm font-bold text-slate-700 dark:text-slate-300">No secure notes found</p>
+            <p class="text-xs text-slate-400 dark:text-slate-500 mt-1">Create confidential records by tapping "Add Note".</p>
+          </div>
+        `;
+        lucide.createIcons();
+        return;
+      }
+
+      grid.innerHTML = '<div class="col-span-full py-12 text-center text-xs animate-pulse text-slate-400">Decrypting notes...</div>';
+
+      try {
+        const decPromises = encryptedNotesList.map(async (n) => {
+          try {
+            const derivedKeyForNote = await deriveKey(vaultPassword, n.salt);
+            const decStr = await decryptText(n.encrypted_data, derivedKeyForNote, n.iv);
+            const dataObj = JSON.parse(decStr);
+            return {
+              id: n.id,
+              title: dataObj.title,
+              content: dataObj.content
+            };
+          } catch (e) {
+            return null;
+          }
+        });
+
+        const decryptedList = (await Promise.all(decPromises)).filter(Boolean);
+
+        if (decryptedList.length === 0) {
+          grid.innerHTML = `
+            <div class="col-span-full text-center py-12 bg-white dark:bg-brand-dark-card border rounded-3xl">
+              <p class="text-xs text-red-500">Failed to decrypt any notes. Your master password may have changed.</p>
+            </div>
+          `;
+          return;
+        }
+
+        grid.innerHTML = decryptedList.map(note => `
+          <div class="bg-white dark:bg-brand-dark-card rounded-3xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col justify-between space-y-4 relative overflow-hidden group hover:shadow-md transition-all">
+            <div class="space-y-2">
+              <div class="flex items-start justify-between">
+                <h4 class="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
+                  <i data-lucide="file-text" class="w-4 h-4 text-amber-500"></i> ${escapeHtml(note.title)}
+                </h4>
+                <div class="flex items-center gap-1">
+                  <button onclick="openNoteModal('${note.id}', '${encodeURIComponent(note.title)}', '${encodeURIComponent(note.content)}')" class="p-1.5 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-all">
+                    <i data-lucide="edit-3" class="w-3.5 h-3.5"></i>
+                  </button>
+                  <button onclick="handleDeleteNote('${note.id}')" class="p-1.5 text-red-400 hover:text-red-600 rounded-lg hover:bg-red-50 dark:hover:bg-red-950/20 transition-all">
+                    <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                  </button>
+                </div>
+              </div>
+              <p class="text-xs text-slate-600 dark:text-slate-300 leading-relaxed whitespace-pre-wrap">${escapeHtml(note.content)}</p>
+            </div>
+            <div class="flex items-center gap-1 text-[10px] text-emerald-500 font-bold uppercase">
+              <i data-lucide="shield-check" class="w-3 h-3"></i> AES-GCM Encrypted
+            </div>
+          </div>
+        `).join('');
+
+        lucide.createIcons();
+      } catch (err) {
+        console.error(err);
+        grid.innerHTML = `<div class="col-span-full text-center text-xs text-red-500 py-6">Decryption Error. Contact administrator.</div>`;
+      }
+    }
+
+    function escapeHtml(str) {
+      return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;');
+    }
+
+    function openNoteModal(id = '', title = '', content = '') {
+      playSoftClick();
+      document.getElementById('noteModalId').value = id;
+      document.getElementById('noteModalTitleInput').value = title ? decodeURIComponent(title) : '';
+      document.getElementById('noteModalContentInput').value = content ? decodeURIComponent(content) : '';
+
+      document.getElementById('noteModalTitle').textContent = id ? 'Edit Secure Note' : 'Create Secure Note';
+      document.getElementById('secureNoteModal').classList.remove('hidden');
+    }
+
+    function closeNoteModal() {
+      playSoftClick();
+      document.getElementById('secureNoteModal').classList.add('hidden');
+    }
+
+    async function submitSaveNote() {
+      playSoftClick();
+      if (!vaultKey) return;
+
+      const id = document.getElementById('noteModalId').value;
+      const title = document.getElementById('noteModalTitleInput').value;
+      const content = document.getElementById('noteModalContentInput').value;
+
+      if (!title || !content) return;
+
+      showToast('Encrypting and saving secure note...', 'info');
+
+      try {
+        const plainDataStr = JSON.stringify({ title, content });
+
+        const salt = generateRandomHex(16);
+        const derivedKey = await deriveKey(vaultPassword, salt);
+        const encryptedResult = await encryptText(plainDataStr, derivedKey, salt);
+
+        const payload = {
+          token,
+          id: id || uuid(),
+          encrypted_data: encryptedResult.encryptedHex,
+          iv: encryptedResult.ivHex,
+          salt: encryptedResult.saltHex
+        };
+
+        const res = await fetch(`${API}?action=saveSecureNote`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        const d = await res.json();
+
+        if (d.success) {
+          closeNoteModal();
+          showToast('Confidential note saved', 'success');
+          const resNotes = await fetch(`${API}?action=getSecureNotes`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ token })
+          });
+          encryptedNotesList = await resNotes.json();
+          renderVaultPage();
+        } else {
+          showToast(d.error || 'Failed to save secure note', 'error');
+        }
+      } catch (err) {
+        console.error(err);
+        showToast('Connection error saving secure note', 'error');
+      }
+    }
+
+    async function handleDeleteNote(id) {
+      const confirmDelete = await showConfirm('Are you absolutely sure you want to delete this secure note? It will be permanently removed from Google Sheets.', 'Confirm Permanent Delete');
+      if (!confirmDelete) return;
+
+      showToast('Deleting note...', 'info');
+
+      try {
+        const res = await fetch(`${API}?action=deleteSecureNote`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ token, id })
+        });
+        const d = await res.json();
+
+        if (d.success) {
+          showToast('Note deleted successfully', 'success');
+          const resNotes = await fetch(`${API}?action=getSecureNotes`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ token })
+          });
+          encryptedNotesList = await resNotes.json();
+          renderVaultPage();
+        } else {
+          showToast(d.error || 'Failed to delete note', 'error');
+        }
+      } catch (err) {
+        console.error(err);
+        showToast('Connection error deleting note', 'error');
+      }
+    }
+
+    // ----- Share Dashboard System -----
+    let sharedLinksList = [];
+
+    async function loadSharedLinks() {
+      if (!token) return;
+      try {
+        const res = await fetch(`${API}?action=getSharedLinks`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ token })
+        });
+        const d = await res.json();
+        if (d && Array.isArray(d)) {
+          sharedLinksList = d;
+          renderSharedLinksUI();
+        }
+      } catch (err) {
+        console.error('Error loading shared links:', err);
+      }
+    }
+
+    function renderSharedLinksUI() {
+      const container = document.getElementById('sharedLinksContainer');
+      if (!container) return;
+
+      if (sharedLinksList.length === 0) {
+        container.innerHTML = `
+          <p class="text-xs text-slate-400 dark:text-slate-500 italic">No active shared links generated.</p>
+        `;
+        return;
+      }
+
+      container.innerHTML = `
+        <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">Active Share Links</label>
+        <div class="space-y-3">
+          ${sharedLinksList.map(link => {
+            const url = `${window.location.origin}${window.location.pathname}?share=${link.token}`;
+            const isExpired = new Date() > new Date(link.expiry);
+            const statusText = isExpired ? '<span class="text-red-500 font-bold">Expired</span>' : '<span class="text-emerald-500 font-bold">Active</span>';
+            return `
+              <div class="p-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+                <div class="min-w-0 flex-1">
+                  <div class="flex items-center gap-2 flex-wrap">
+                    <span class="text-xs font-bold text-slate-700 dark:text-slate-300">${statusText}</span>
+                    <span class="text-[10px] text-slate-400">Expires: ${new Date(link.expiry).toLocaleString('en-GB')}</span>
+                    ${link.password_hash ? `<span class="px-1.5 py-0.5 bg-amber-500/10 text-amber-500 font-bold text-[9px] rounded-full flex items-center gap-0.5"><i data-lucide="lock" class="w-2.5 h-2.5"></i> Protected</span>` : ''}
+                  </div>
+                  <p class="text-xs font-mono text-slate-500 dark:text-slate-400 truncate mt-1 select-all">${url}</p>
+                </div>
+                <div class="flex items-center gap-2 w-full sm:w-auto">
+                  <button onclick="copyToClipboard('${url}', 'copy-share-${link.id}')" id="copy-share-${link.id}" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-semibold rounded-xl text-[10px] flex items-center gap-1 transition-all">
+                    <i data-lucide="copy" class="w-3 h-3"></i> Copy
+                  </button>
+                  <button onclick="revokeLink('${link.id}')" class="px-3 py-1.5 bg-red-50 hover:bg-red-100 text-red-600 dark:bg-red-950/20 dark:hover:bg-red-950/40 dark:text-red-400 font-bold rounded-xl text-[10px] flex items-center gap-1 transition-all">
+                    <i data-lucide="trash-2" class="w-3 h-3"></i> Revoke
+                  </button>
+                </div>
+              </div>
+            `;
+          }).join('')}
+        </div>
+      `;
+      lucide.createIcons();
+    }
+
+    async function generateSharedLink() {
+      playSoftClick();
+      const expiryHours = document.getElementById('settingShareExpiry').value;
+      const password = document.getElementById('settingSharePassword').value;
+
+      showToast('Generating shared dashboard link...', 'info');
+
+      try {
+        const hash = password ? await sha256(password) : '';
+        const res = await fetch(`${API}?action=createSharedLink`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ token, expiryHours, passwordHash: hash })
+        });
+        const d = await res.json();
+
+        if (d.success) {
+          showToast('Share link generated successfully!', 'success');
+          document.getElementById('settingSharePassword').value = '';
+          loadSharedLinks();
+        } else {
+          showToast(d.error || 'Failed to generate link', 'error');
+        }
+      } catch (err) {
+        console.error(err);
+        showToast('Connection error generating link', 'error');
+      }
+    }
+
+    async function revokeLink(id) {
+      const confirmRevoke = await showConfirm('Are you sure you want to revoke this shared link? Anyone using this link will immediately lose access to the read-only dashboard.', 'Revoke Shared Link');
+      if (!confirmRevoke) return;
+
+      showToast('Revoking link...', 'info');
+
+      try {
+        const res = await fetch(`${API}?action=revokeSharedLink`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ token, id })
+        });
+        const d = await res.json();
+
+        if (d.success) {
+          showToast('Shared link revoked successfully', 'success');
+          loadSharedLinks();
+        } else {
+          showToast(d.error || 'Failed to revoke link', 'error');
+        }
+      } catch (err) {
+        console.error(err);
+        showToast('Connection error revoking link', 'error');
+      }
+    }
+
+    let activeShareToken = '';
+    async function checkSharedLink() {
+      const urlParams = new URLSearchParams(window.location.search);
+      const share = urlParams.get('share');
+      if (!share) return;
+
+      activeShareToken = share;
+
+      const login = document.getElementById('loginScreen');
+      if (login) login.classList.add('hidden');
+
+      await fetchSharedDashboardData(share);
+    }
+
+    async function fetchSharedDashboardData(shareToken, password = '') {
+      const passwordHash = password ? await sha256(password) : '';
+      try {
+        const res = await fetch(`${API}?action=getSharedDashboard`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ token: shareToken, passwordHash })
+        });
+        const d = await res.json();
+
+        if (d.error) {
+          if (d.password_required) {
+            document.getElementById('sharedPasswordScreen').classList.remove('hidden');
+          } else {
+            document.getElementById('sharedErrorScreen').classList.remove('hidden');
+            document.getElementById('sharedErrorText').textContent = d.error;
+          }
+          return;
+        }
+
+        document.getElementById('sharedPasswordScreen').classList.add('hidden');
+        document.getElementById('sharedErrorScreen').classList.add('hidden');
+
+        document.body.classList.add('is-shared-view');
+
+        document.getElementById('mainDashboard').classList.remove('hidden');
+
+        // Cleanly hide all non-essential and interactive elements from shared read-only dashboard
+        const sidebar = document.getElementById('sidebar');
+        if (sidebar) sidebar.style.setProperty('display', 'none', 'important');
+
+        const header = document.querySelector('header');
+        if (header) header.style.setProperty('display', 'none', 'important');
+
+        const mobileNav = document.querySelector('nav.md\\:hidden');
+        if (mobileNav) mobileNav.style.setProperty('display', 'none', 'important');
+
+        const mobileMore = document.getElementById('mobileMoreMenu');
+        if (mobileMore) mobileMore.style.setProperty('display', 'none', 'important');
+
+        const insights = document.getElementById('smartInsightsCard');
+        if (insights) insights.style.setProperty('display', 'none', 'important');
+
+        const health = document.getElementById('healthScoreCard');
+        if (health) health.style.setProperty('display', 'none', 'important');
+
+        const budgetCard = document.getElementById('budgetPlannerCard');
+        if (budgetCard) budgetCard.style.setProperty('display', 'none', 'important');
+
+        const bankAccountsCard = document.getElementById('dashboardBankAccounts')?.closest('.bg-white');
+        if (bankAccountsCard) bankAccountsCard.style.setProperty('display', 'none', 'important');
+
+        const monthlyInsightsCard = document.getElementById('liveTimestamp')?.closest('.bg-white');
+        if (monthlyInsightsCard) monthlyInsightsCard.style.setProperty('display', 'none', 'important');
+
+        const statsGrid = document.getElementById('allowanceStatsTbody')?.closest('.grid');
+        if (statsGrid) statsGrid.style.setProperty('display', 'none', 'important');
+
+        const savingsButtons = document.querySelector('#savingsCard .flex.gap-2');
+        if (savingsButtons) savingsButtons.style.setProperty('display', 'none', 'important');
+
+        const savingsGoalProgress = document.querySelector('#savingsCard .mt-4.pt-4');
+        if (savingsGoalProgress) savingsGoalProgress.style.setProperty('display', 'none', 'important');
+
+        const speakerIcons = document.querySelectorAll('#view-dashboard [title="Speak Balance"], #view-dashboard button[onclick^="speakBalance"]');
+        speakerIcons.forEach(icon => icon.style.setProperty('display', 'none', 'important'));
+
+        const moneyFlowContainer = document.querySelector('.lg\\:col-span-2');
+        if (moneyFlowContainer) {
+          moneyFlowContainer.classList.remove('lg:col-span-2');
+          moneyFlowContainer.classList.add('lg:col-span-3');
+        }
+
+        const workspace = document.getElementById('workspaceContainer');
+        if (workspace) {
+          workspace.style.padding = '40px 20px';
+          workspace.style.maxWidth = '1000px';
+          workspace.style.margin = '0 auto';
+        }
+
+        animateNumber('mamaBalance', d.mamaAccount);
+        animateNumber('savingsBalance', d.savingsBalance);
+        animateNumber('totalRemaining', d.totalRemaining);
+
+        const mfs = d.moneyFlowSettings || { allowance: 430, mama: 300, wallet: 100, savings: 30 };
+        animateNumber('nodeAllowanceVal', mfs.allowance, 'RM', '/mo');
+        animateNumber('nodeMamaVal', mfs.mama);
+        animateNumber('nodeWalletVal', mfs.wallet);
+        animateNumber('nodeSavingsVal', mfs.savings);
+
+        lucide.createIcons();
+        showToast('Viewing read-only shared dashboard', 'success');
+      } catch (err) {
+        console.error(err);
+        document.getElementById('sharedErrorScreen').classList.remove('hidden');
+        document.getElementById('sharedErrorText').textContent = 'Failed to connect to the secure server.';
+      }
+    }
+
+    async function submitSharedPassword() {
+      playSoftClick();
+      const pass = document.getElementById('sharedPasswordInput').value;
+      if (!pass) return;
+      await fetchSharedDashboardData(activeShareToken, pass);
+    }
+
     function clearHistFilters() {
       playSoftClick();
       document.getElementById('histSearchInput').value = '';
@@ -2228,7 +4306,7 @@
       const currencySelect = document.getElementById('settingPrimaryCurrency').value;
 
       try {
-        const [resOffsets, resFlow, resAlerts, resCurrency] = await Promise.all([
+        const [resOffsets, resFlow, resAlerts, resCurrency, resBudget] = await Promise.all([
           fetch(`${API}?action=setOffsets`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -2248,6 +4326,16 @@
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ token, primary: 'MYR', selected: currencySelect, customRates: currencyRates })
+          }),
+          fetch(`${API}?action=setBudgetSettings`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              token,
+              total: parseFloat(document.getElementById('settingBudgetTotal').value) || 0,
+              refills: parseFloat(document.getElementById('settingBudgetRefills').value) || 0,
+              savings_usage: parseFloat(document.getElementById('settingBudgetSavingsUsage').value) || 0
+            })
           })
         ]);
 
@@ -2255,14 +4343,15 @@
         const d2 = await resFlow.json();
         const d3 = await resAlerts.json();
         const d4 = await resCurrency.json();
+        const d5 = await resBudget.json();
 
-        if (d1.success && d2.success && d3.success && d4.success) {
+        if (d1.success && d2.success && d3.success && d4.success && d5.success) {
           currentCurrency = currencySelect;
           playChime();
           showToast('Settings saved successfully', 'success');
           loadAllAppData();
         } else {
-          showToast(d1.error || d2.error || d3.error || d4.error || 'Failed to save settings', 'error');
+          showToast(d1.error || d2.error || d3.error || d4.error || d5.error || 'Failed to save settings', 'error');
         }
       } catch(e) {
         showToast('Connection error while saving settings', 'error');
@@ -2506,11 +4595,11 @@
     }
 
     async function undo() {
-      playSoftClick();
+      playSoundEvent('undo');
       if (undoStack.length) await undoAction(undoStack[undoStack.length-1].id);
     }
     async function redo() {
-      playSoftClick();
+      playSoundEvent('redo');
       if (redoStack.length) await redoAction(redoStack[redoStack.length-1].id);
     }
 
@@ -2892,6 +4981,7 @@
     document.addEventListener('DOMContentLoaded', () => {
       updateOnlineStatus();
       initLocationDarkMode();
+      checkSharedLink();
     });
 
     let deferredPrompt = null;
@@ -2950,6 +5040,41 @@
     </div>
   </div>
 
+  <!-- SHARED LINK PASSWORD PROMPT SCREEN -->
+  <div id="sharedPasswordScreen" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-md hidden">
+    <div class="bg-white dark:bg-brand-dark-card w-full max-w-sm mx-4 p-8 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-2xl relative text-center space-y-6">
+      <div class="w-16 h-16 bg-amber-500/20 text-brand-yellow rounded-full flex items-center justify-center mx-auto">
+        <i data-lucide="shield-alert" class="w-8 h-8 text-amber-500"></i>
+      </div>
+      <div>
+        <h3 class="text-lg font-bold text-slate-900 dark:text-white">Password Protected</h3>
+        <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">This shared dashboard link requires a password to view.</p>
+      </div>
+      <form onsubmit="event.preventDefault(); submitSharedPassword();" class="space-y-4">
+        <input type="password" id="sharedPasswordInput" required placeholder="Enter Password" class="w-full px-4 py-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl focus:ring-2 focus:ring-brand-yellow outline-none text-slate-900 dark:text-white text-center">
+        <button type="submit" class="w-full py-3 bg-brand-yellow hover:bg-brand-yellow-hover text-slate-950 font-bold rounded-2xl shadow-lg transition-all flex items-center justify-center gap-2">
+          <i data-lucide="unlock" class="w-5 h-5"></i> Access Dashboard
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- SHARED LINK ERROR SCREEN -->
+  <div id="sharedErrorScreen" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-md hidden">
+    <div class="bg-white dark:bg-brand-dark-card w-full max-w-sm mx-4 p-8 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-2xl relative text-center space-y-6">
+      <div class="w-16 h-16 bg-red-100 dark:bg-red-950/40 text-red-500 rounded-full flex items-center justify-center mx-auto">
+        <i data-lucide="alert-octagon" class="w-8 h-8"></i>
+      </div>
+      <div>
+        <h3 class="text-lg font-bold text-slate-900 dark:text-white">Link Expired or Invalid</h3>
+        <p class="text-xs text-slate-500 dark:text-slate-400 mt-1" id="sharedErrorText">This temporary read-only link has expired or is invalid. Please ask the administrator for a new link.</p>
+      </div>
+      <button onclick="window.location.href='/'" class="w-full py-3 bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 font-bold rounded-2xl">
+        Go to Login
+      </button>
+    </div>
+  </div>
+
   <!-- PWA INSTALL PROMPT BANNER -->
   <div id="pwaInstallBanner" class="hidden fixed bottom-6 left-6 right-6 md:left-auto md:max-w-md z-50 p-4 rounded-3xl bg-white/70 dark:bg-slate-900/70 backdrop-blur-md border border-slate-200/50 dark:border-slate-800/50 shadow-2xl flex flex-col gap-3 transition-all duration-300">
     <div class="flex items-start justify-between">
@@ -3004,14 +5129,18 @@
         <i data-lucide="x" class="w-4 h-4"></i>
       </button>
     </div>
-    <div class="grid grid-cols-2 gap-4">
-      <button onclick="switchTab('history', true); toggleMobileMoreMenu(false);" id="mobileTabBtn-history" class="p-4 bg-slate-50 hover:bg-slate-100 dark:bg-slate-950/60 dark:hover:bg-slate-850/60 rounded-2xl flex flex-col items-center gap-2 border">
-        <div class="p-3 bg-indigo-500/10 text-indigo-500 rounded-xl"><i data-lucide="history" class="w-5 h-5"></i></div>
-        <span class="text-xs font-bold text-slate-800 dark:text-slate-200">History Log</span>
+    <div class="grid grid-cols-3 gap-3">
+      <button onclick="switchTab('history', true); toggleMobileMoreMenu(false);" id="mobileTabBtn-history" class="p-3 bg-slate-50 hover:bg-slate-100 dark:bg-slate-950/60 dark:hover:bg-slate-850/60 rounded-2xl flex flex-col items-center gap-2 border">
+        <div class="p-2.5 bg-indigo-500/10 text-indigo-500 rounded-xl"><i data-lucide="history" class="w-5 h-5"></i></div>
+        <span class="text-[10px] font-bold text-slate-800 dark:text-slate-200">History</span>
       </button>
-      <button onclick="switchTab('settings', true); toggleMobileMoreMenu(false);" id="mobileTabBtn-settings" class="p-4 bg-slate-50 hover:bg-slate-100 dark:bg-slate-950/60 dark:hover:bg-slate-850/60 rounded-2xl flex flex-col items-center gap-2 border">
-        <div class="p-3 bg-amber-500/10 text-amber-500 rounded-xl"><i data-lucide="settings" class="w-5 h-5"></i></div>
-        <span class="text-xs font-bold text-slate-800 dark:text-slate-200">Settings</span>
+      <button onclick="switchTab('vault', true); toggleMobileMoreMenu(false);" id="mobileTabBtn-vault" class="p-3 bg-slate-50 hover:bg-slate-100 dark:bg-slate-950/60 dark:hover:bg-slate-850/60 rounded-2xl flex flex-col items-center gap-2 border">
+        <div class="p-2.5 bg-red-500/10 text-red-500 rounded-xl"><i data-lucide="lock" class="w-5 h-5"></i></div>
+        <span class="text-[10px] font-bold text-slate-800 dark:text-slate-200">Vault</span>
+      </button>
+      <button onclick="switchTab('settings', true); toggleMobileMoreMenu(false);" id="mobileTabBtn-settings" class="p-3 bg-slate-50 hover:bg-slate-100 dark:bg-slate-950/60 dark:hover:bg-slate-850/60 rounded-2xl flex flex-col items-center gap-2 border">
+        <div class="p-2.5 bg-amber-500/10 text-amber-500 rounded-xl"><i data-lucide="settings" class="w-5 h-5"></i></div>
+        <span class="text-[10px] font-bold text-slate-800 dark:text-slate-200">Settings</span>
       </button>
     </div>
     <div class="pt-4 border-t border-slate-100 dark:border-slate-800 space-y-3">
