@@ -209,10 +209,12 @@ module.exports = async (req, res) => {
             };
           }
           break;
-        case 'addTransaction':
-        case 'deleteTransaction':
         case 'requestMoney':
         case 'useSavings':
+          result = { success: true, transactionId: 'mock-tx-id' };
+          break;
+        case 'addTransaction':
+        case 'deleteTransaction':
         case 'topUpSavings':
         case 'setOffsets':
         case 'setMoneyFlowSettings':
@@ -232,7 +234,7 @@ module.exports = async (req, res) => {
       let result;
       switch (action) {
         case 'getDashboard': result = await getDashboardData(doc); break;
-        case 'requestMoney': result = await requestMoney(doc, body.amount); break;
+        case 'requestMoney': result = await requestMoney(doc, body.amount, body.targetMonth); break;
         case 'processNewMonth': result = await processNewMonth(doc, body.month, body.year, body.dateReceived); break;
         case 'updateDateReceived': result = await updateDateReceived(doc, body.month, body.newDate); break;
         case 'useSavings': result = await useSavings(doc, body.amount, body.month); break;
@@ -824,15 +826,27 @@ async function updateDateReceived(doc, month, newDate) {
 }
 
 // ---------- Request Money ----------
-async function requestMoney(doc, amount) {
+async function requestMoney(doc, amount, targetMonth) {
+  const statsSheet = doc.sheetsByTitle['allowance_stats'];
+  const rows = await statsSheet.getRows();
+  let withBalance = rows.filter(r => Number(r.Balance) > 0);
+
+  if (targetMonth) {
+    withBalance = withBalance.filter(r => r.Month.trim().toLowerCase() === targetMonth.trim().toLowerCase());
+    if (withBalance.length === 0) {
+      throw new Error(`No available allowance balance found for ${targetMonth}`);
+    }
+    const available = Number(withBalance[0].Balance);
+    if (amount > available) {
+      throw new Error(`Transfer amount exceeding available balance for ${targetMonth} (Available: RM${available.toFixed(2)})`);
+    }
+  } else {
+    withBalance.sort((a, b) => compareMonthYear(a.Month, b.Month));
+  }
+
   const txSheet = await getOrCreateSheet(doc, 'transactions', ['Date', 'Type', 'Amount', 'Note', 'ID', 'Attachment']);
   const txId = uuid();
   await txSheet.addRow({ Date: new Date().toISOString(), Type: 'refill', Amount: amount, Note: 'Transfer from Mama', ID: txId });
-
-  const statsSheet = doc.sheetsByTitle['allowance_stats'];
-  const rows = await statsSheet.getRows();
-  const withBalance = rows.filter(r => Number(r.Balance) > 0);
-  withBalance.sort((a, b) => compareMonthYear(a.Month, b.Month));
 
   let remaining = amount;
   const adjustments = [];
@@ -846,7 +860,7 @@ async function requestMoney(doc, amount) {
       remaining -= deduct;
     }
   }
-  await addHistory(doc, 'requestMoney', { amount, txId, adjustments });
+  await addHistory(doc, 'requestMoney', { amount, txId, adjustments, targetMonth });
   return { transactionId: txId, adjustments };
 }
 
@@ -984,7 +998,7 @@ async function redoAction(doc, actionId) {
   const details = JSON.parse(action.Details);
   // Re-execute based on type
   switch (action.Type) {
-    case 'requestMoney': await requestMoney(doc, details.amount); break;
+    case 'requestMoney': await requestMoney(doc, details.amount, details.targetMonth); break;
     case 'newMonth': await processNewMonth(doc, details.month ? details.month.split(' ')[0] : undefined, details.month ? details.month.split(' ')[1] : undefined, details.dateReceived); break;
     case 'updateDateReceived': await updateDateReceived(doc, details.month, details.newDate); break;
     case 'useSavings': await useSavings(doc, details.amount, details.month); break;
