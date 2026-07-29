@@ -1035,6 +1035,10 @@ async function getOrCreateHistorySheet(doc) {
 }
 
 async function addHistory(doc, type, details) {
+  if (doc._suppressHistory) {
+    doc._lastHistoryDetails = details;
+    return;
+  }
   const sheet = await getOrCreateHistorySheet(doc);
   await sheet.addRow({ ID: uuid(), Type: type, Details: JSON.stringify(details), Timestamp: new Date().toISOString(), Undone: false });
 }
@@ -1057,17 +1061,32 @@ async function redoAction(doc, actionId) {
   if (action.Undone !== 'true' && action.Undone !== true) return { error: 'Action is not undone' };
 
   const details = JSON.parse(action.Details);
-  // Re-execute based on type
-  switch (action.Type) {
-    case 'requestMoney': await requestMoney(doc, details.amount, details.targetMonth, details.date); break;
-    case 'newMonth': await processNewMonth(doc, details.month ? details.month.split(' ')[0] : undefined, details.month ? details.month.split(' ')[1] : undefined, details.dateReceived); break;
-    case 'updateDateReceived': await updateDateReceived(doc, details.month, details.newDate); break;
-    case 'useSavings': await useSavings(doc, details.amount, details.month); break;
-    case 'topUpSavings': await topUpSavings(doc, details.months, details.totalAmount); break;
-    case 'setOffsets': await setOffsets(doc, details.wallet, details.savings); break;
-    case 'addTransaction': await addTransaction(doc, details.type, details.amount, details.note, details.attachment); break;
-    case 'deleteTransaction': await deleteTransaction(doc, details.txBackup ? details.txBackup.id : null); break;
+
+  // Set the suppress flag to avoid duplicating the history entry
+  doc._suppressHistory = true;
+  doc._lastHistoryDetails = null;
+
+  try {
+    // Re-execute based on type
+    switch (action.Type) {
+      case 'requestMoney': await requestMoney(doc, details.amount, details.targetMonth, details.date); break;
+      case 'newMonth': await processNewMonth(doc, details.month ? details.month.split(' ')[0] : undefined, details.month ? details.month.split(' ')[1] : undefined, details.dateReceived); break;
+      case 'updateDateReceived': await updateDateReceived(doc, details.month, details.newDate); break;
+      case 'useSavings': await useSavings(doc, details.amount, details.month); break;
+      case 'topUpSavings': await topUpSavings(doc, details.months, details.totalAmount); break;
+      case 'setOffsets': await setOffsets(doc, details.wallet, details.savings); break;
+      case 'addTransaction': await addTransaction(doc, details.type, details.amount, details.note, details.attachment); break;
+      case 'deleteTransaction': await deleteTransaction(doc, details.txBackup ? details.txBackup.id : null); break;
+    }
+
+    if (doc._lastHistoryDetails) {
+      action.Details = JSON.stringify(doc._lastHistoryDetails);
+    }
+  } finally {
+    doc._suppressHistory = false;
+    doc._lastHistoryDetails = null;
   }
+
   action.Undone = false;
   await action.save();
   return { success: true };
