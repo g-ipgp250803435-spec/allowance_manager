@@ -234,7 +234,7 @@ module.exports = async (req, res) => {
       let result;
       switch (action) {
         case 'getDashboard': result = await getDashboardData(doc); break;
-        case 'requestMoney': result = await requestMoney(doc, body.amount, body.targetMonth); break;
+        case 'requestMoney': result = await requestMoney(doc, body.amount, body.targetMonth, body.date); break;
         case 'processNewMonth': result = await processNewMonth(doc, body.month, body.year, body.dateReceived); break;
         case 'updateDateReceived': result = await updateDateReceived(doc, body.month, body.newDate); break;
         case 'useSavings': result = await useSavings(doc, body.amount, body.month); break;
@@ -826,7 +826,7 @@ async function updateDateReceived(doc, month, newDate) {
 }
 
 // ---------- Request Money ----------
-async function requestMoney(doc, amount, targetMonth) {
+async function requestMoney(doc, amount, targetMonth, date) {
   const statsSheet = doc.sheetsByTitle['allowance_stats'];
   const rows = await statsSheet.getRows();
   let withBalance = rows.filter(r => Number(r.Balance) > 0);
@@ -846,7 +846,8 @@ async function requestMoney(doc, amount, targetMonth) {
 
   const txSheet = await getOrCreateSheet(doc, 'transactions', ['Date', 'Type', 'Amount', 'Note', 'ID', 'Attachment']);
   const txId = uuid();
-  await txSheet.addRow({ Date: new Date().toISOString(), Type: 'refill', Amount: amount, Note: 'Transfer from Mama', ID: txId });
+  const txDate = date ? new Date(date).toISOString() : new Date().toISOString();
+  await txSheet.addRow({ Date: txDate, Type: 'refill', Amount: amount, Note: 'Transfer from Mama', ID: txId });
 
   let remaining = amount;
   const adjustments = [];
@@ -860,7 +861,7 @@ async function requestMoney(doc, amount, targetMonth) {
       remaining -= deduct;
     }
   }
-  await addHistory(doc, 'requestMoney', { amount, txId, adjustments, targetMonth });
+  await addHistory(doc, 'requestMoney', { amount, txId, adjustments, targetMonth, date });
   return { transactionId: txId, adjustments };
 }
 
@@ -998,7 +999,7 @@ async function redoAction(doc, actionId) {
   const details = JSON.parse(action.Details);
   // Re-execute based on type
   switch (action.Type) {
-    case 'requestMoney': await requestMoney(doc, details.amount, details.targetMonth); break;
+    case 'requestMoney': await requestMoney(doc, details.amount, details.targetMonth, details.date); break;
     case 'newMonth': await processNewMonth(doc, details.month ? details.month.split(' ')[0] : undefined, details.month ? details.month.split(' ')[1] : undefined, details.dateReceived); break;
     case 'updateDateReceived': await updateDateReceived(doc, details.month, details.newDate); break;
     case 'useSavings': await useSavings(doc, details.amount, details.month); break;
