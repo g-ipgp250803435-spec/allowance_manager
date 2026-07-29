@@ -111,9 +111,9 @@ module.exports = async (req, res) => {
       switch (action) {
         case 'getDashboard':
           result = {
-            mamaAccount: 240,
+            mamaAccount: 600,
             savingsBalance: 120,
-            totalRemaining: 360,
+            totalRemaining: 720,
             offsets: { wallet: 0, savings: 0 },
             moneyFlowSettings: { allowance: 430, mama: 300, wallet: 100, savings: 30 },
             alertSettings: { mama_threshold: 50, savings_threshold: 50, savings_goal: 500 },
@@ -202,9 +202,9 @@ module.exports = async (req, res) => {
           } else {
             result = {
               success: true,
-              mamaAccount: 240,
+              mamaAccount: 600,
               savingsBalance: 120,
-              totalRemaining: 360,
+              totalRemaining: 720,
               moneyFlowSettings: { allowance: 430, mama: 300, wallet: 100, savings: 30 }
             };
           }
@@ -476,18 +476,18 @@ async function restoreData(doc, backup) {
 // ---------- Dashboard Data ----------
 async function getDashboardData(doc) {
   const offsets = await getOffsets(doc);
-  const balance = await calculateBalance(doc);
-  const savingsBalance = await calculateSavingsBalance(doc);
   const stats = await getAllowanceStats(doc);
+  const overallAllowanceBalance = stats.reduce((sum, s) => sum + (s.balance || 0), 0);
+  const savingsBalance = await calculateSavingsBalance(doc);
   const savingsStats = await getSavingsStats(doc);
   const transfers = await getMonthlyMomTransfers(doc);
   const moneyFlowSettings = await getMoneyFlowSettings(doc);
   const alertSettings = await getAlertSettings(doc);
   const currencySettings = await getCurrencySettings(doc);
   return {
-    mamaAccount: balance + offsets.wallet,
+    mamaAccount: overallAllowanceBalance,
     savingsBalance: savingsBalance + offsets.savings,
-    totalRemaining: balance + offsets.wallet + savingsBalance + offsets.savings,
+    totalRemaining: overallAllowanceBalance + offsets.wallet + savingsBalance + offsets.savings,
     offsets,
     moneyFlowSettings,
     alertSettings,
@@ -1143,15 +1143,16 @@ async function getSharedDashboard(doc, token, passwordHash) {
 
   // Fetch minimal dashboard data
   const offsets = await getOffsets(doc);
-  const balance = await calculateBalance(doc);
+  const stats = await getAllowanceStats(doc);
+  const overallAllowanceBalance = stats.reduce((sum, s) => sum + (s.balance || 0), 0);
   const savingsBalance = await calculateSavingsBalance(doc);
   const moneyFlowSettings = await getMoneyFlowSettings(doc);
 
   return {
     success: true,
-    mamaAccount: balance + offsets.wallet,
+    mamaAccount: overallAllowanceBalance,
     savingsBalance: savingsBalance + offsets.savings,
-    totalRemaining: balance + offsets.wallet + savingsBalance + offsets.savings,
+    totalRemaining: overallAllowanceBalance + offsets.wallet + savingsBalance + offsets.savings,
     moneyFlowSettings
   };
 }
