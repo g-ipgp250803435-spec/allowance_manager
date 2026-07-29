@@ -548,7 +548,14 @@
                   <table class="w-full text-left text-xs border-collapse">
                     <thead><tr class="border-b border-slate-200 dark:border-slate-800 text-slate-400"><th class="py-2.5">Month</th><th class="py-2.5">Date Received</th><th class="py-2.5">Allowance</th><th class="py-2.5">Usage</th><th class="py-2.5">Balance</th></tr></thead>
                     <tbody id="allowanceStatsTbody"></tbody>
+                    <tfoot id="allowanceStatsTfoot"></tfoot>
                   </table>
+                </div>
+                <!-- Allowance Statistics Summary Section -->
+                <div class="mt-4 pt-4 border-t border-slate-100 dark:border-slate-800/80 flex flex-wrap items-center justify-between gap-4 text-xs font-bold" id="allowanceStatsSummary">
+                  <span class="text-slate-500 dark:text-slate-400">Total Allowance: <span class="text-slate-900 dark:text-white ml-1" id="totalAllowanceVal">RM0.00</span></span>
+                  <span class="text-slate-500 dark:text-slate-400">Total Usage: <span class="text-red-500 ml-1" id="totalUsageVal">RM0.00</span></span>
+                  <span class="text-slate-500 dark:text-slate-400">Total Balance: <span class="text-emerald-500 ml-1" id="totalBalanceVal">RM0.00</span></span>
                 </div>
               </div>
               <div class="bg-white dark:bg-brand-dark-card rounded-3xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm">
@@ -2343,6 +2350,18 @@
       if (document.getElementById('savingsStatsTbody')) {
         document.getElementById('savingsStatsTbody').innerHTML = tableShimmer;
       }
+      if (document.getElementById('allowanceStatsTfoot')) {
+        document.getElementById('allowanceStatsTfoot').innerHTML = '';
+      }
+      if (document.getElementById('totalAllowanceVal')) {
+        document.getElementById('totalAllowanceVal').textContent = 'RM--';
+      }
+      if (document.getElementById('totalUsageVal')) {
+        document.getElementById('totalUsageVal').textContent = 'RM--';
+      }
+      if (document.getElementById('totalBalanceVal')) {
+        document.getElementById('totalBalanceVal').textContent = 'RM--';
+      }
     }
 
     async function loadAllAppData() {
@@ -2463,6 +2482,17 @@
       renderBanks('dashboardBankAccounts');
       renderBanks('transferBankAccounts');
 
+      let totalAllowance = 0;
+      let totalUsage = 0;
+      let totalBalance = 0;
+      if (dashboardData.allowanceStats && dashboardData.allowanceStats.length > 0) {
+        dashboardData.allowanceStats.forEach(s => {
+          totalAllowance += Number(s.allowance || 430);
+          totalUsage += Number(s.usage || 0);
+          totalBalance += Number(s.balance || 0);
+        });
+      }
+
       document.getElementById('allowanceStatsTbody').innerHTML = dashboardData.allowanceStats.map((s, idx) => {
         const displayDate = s.dateReceived || '--';
         return `
@@ -2479,6 +2509,27 @@
           <td class="py-3 text-emerald-500 font-bold">${formatMoney(s.balance||0)}</td>
         </tr>`;
       }).join('');
+
+      if (document.getElementById('allowanceStatsTfoot')) {
+        document.getElementById('allowanceStatsTfoot').innerHTML = `
+        <tr class="border-t-2 border-double border-slate-200 dark:border-slate-800 font-bold bg-slate-50/30 dark:bg-slate-900/10">
+          <td class="py-3 font-bold text-slate-900 dark:text-white">Total</td>
+          <td class="py-3 text-slate-400 font-normal">--</td>
+          <td class="py-3 font-bold text-slate-950 dark:text-slate-50">${formatMoney(totalAllowance)}</td>
+          <td class="py-3 text-red-500 font-bold">${formatMoney(totalUsage)}</td>
+          <td class="py-3 text-emerald-500 font-bold">${formatMoney(totalBalance)}</td>
+        </tr>`;
+      }
+      if (document.getElementById('totalAllowanceVal')) {
+        document.getElementById('totalAllowanceVal').textContent = formatMoney(totalAllowance);
+      }
+      if (document.getElementById('totalUsageVal')) {
+        document.getElementById('totalUsageVal').textContent = formatMoney(totalUsage);
+      }
+      if (document.getElementById('totalBalanceVal')) {
+        document.getElementById('totalBalanceVal').textContent = formatMoney(totalBalance);
+      }
+
       document.getElementById('savingsStatsTbody').innerHTML = dashboardData.savingsStats.map(s => `
         <tr class="border-b"><td class="py-3 font-medium">${s.month}</td><td class="py-3 font-semibold">${formatMoney(s.savings||30)}</td><td class="py-3 text-red-400">${formatMoney(s.usage||0)}</td><td class="py-3 text-emerald-500 font-bold">${formatMoney(s.balance||0)}</td></tr>`).join('');
 
