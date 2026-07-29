@@ -1,10 +1,12 @@
+const { GoogleSpreadsheet } = require('google-spreadsheet');
+
 // Cached connection (add this near the top of api/index.js)
 let _docCache = null;
 let _docCacheTime = 0;
 
 async function getDoc() {
   const now = Date.now();
-  if (_docCache && (now - _docCacheTime) < 5000) return _docCache;
+  if (_docCache && (now - _docCacheTime) < 30000) return _docCache;
   const doc = new GoogleSpreadsheet(process.env.GOOGLE_SHEET_ID);
   await doc.useServiceAccountAuth({
     client_email: process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL,
@@ -15,8 +17,6 @@ async function getDoc() {
   _docCacheTime = now;
   return doc;
 }
-
-const { GoogleSpreadsheet } = require('google-spreadsheet');
 const cors = require('cors');
 
 function uuid() {
@@ -59,16 +59,6 @@ async function parseBody(req) {
   });
 }
 
-async function getDoc() {
-  const doc = new GoogleSpreadsheet(process.env.GOOGLE_SHEET_ID);
-  await doc.useServiceAccountAuth({
-    client_email: process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL,
-    private_key: (process.env.GOOGLE_PRIVATE_KEY || '').replace(/\\n/g, '\n'),
-  });
-  await doc.loadInfo();
-  return doc;
-}
-
 async function getOrCreateSheet(doc, title, headers) {
   let sheet = doc.sheetsByTitle[title];
   if (!sheet) sheet = await doc.addSheet({ title, headerValues: headers });
@@ -79,6 +69,56 @@ async function getOrCreateSheet(doc, title, headers) {
 let mockBudgetSettings = { total: 200, refills: 100, savings_usage: 50 };
 let mockSecureNotes = [];
 let mockSharedLinks = [];
+
+// Global memory caches for Google Sheets reads
+let _globalCache = {};
+const CACHE_TTL = 30000; // 30 seconds
+
+function clearCache() {
+  _globalCache = {};
+  _docCache = null;
+  _docCacheTime = 0;
+}
+
+function getCacheKey(action, body) {
+  const tokenPart = body.token || '';
+  const passPart = body.passwordHash || '';
+  const idPart = body.id || '';
+  return `${action}:${tokenPart}:${passPart}:${idPart}`;
+}
+
+const READ_ACTIONS = [
+  'getDashboard',
+  'getTransactions',
+  'getHistory',
+  'getBudgetSettings',
+  'getSecureNotes',
+  'getSharedLinks',
+  'getSharedDashboard',
+  'getCurrencySettings'
+];
+
+const MUTATION_ACTIONS = [
+  'requestMoney',
+  'processNewMonth',
+  'updateDateReceived',
+  'useSavings',
+  'topUpSavings',
+  'setOffsets',
+  'setMoneyFlowSettings',
+  'setAlertSettings',
+  'setCurrencySettings',
+  'addTransaction',
+  'deleteTransaction',
+  'redoAction',
+  'undoAction',
+  'restore',
+  'setBudgetSettings',
+  'saveSecureNote',
+  'deleteSecureNote',
+  'createSharedLink',
+  'revokeSharedLink'
+];
 
 module.exports = async (req, res) => {
   await cors()(req, res, async () => {
@@ -230,6 +270,17 @@ module.exports = async (req, res) => {
     }
 
     try {
+      const isMutation = MUTATION_ACTIONS.includes(action);
+      if (isMutation) {
+        clearCache();
+      } else if (READ_ACTIONS.includes(action)) {
+        const cacheKey = getCacheKey(action, body);
+        const cached = _globalCache[cacheKey];
+        if (cached && (Date.now() - cached.timestamp) < CACHE_TTL) {
+          return res.json(cached.data);
+        }
+      }
+
       const doc = await getDoc();
       let result;
       switch (action) {
@@ -262,6 +313,15 @@ module.exports = async (req, res) => {
         case 'revokeSharedLink': result = await revokeSharedLink(doc, body.id); break;
         case 'getSharedDashboard': result = await getSharedDashboard(doc, body.token, body.passwordHash); break;
         default: result = { error: 'Unknown action' };
+      }
+      if (isMutation) {
+        clearCache();
+      } else if (READ_ACTIONS.includes(action) && result && !result.error) {
+        const cacheKey = getCacheKey(action, body);
+        _globalCache[cacheKey] = {
+          data: result,
+          timestamp: Date.now()
+        };
       }
       res.json(result);
     } catch (err) {
